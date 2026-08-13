@@ -1,6 +1,7 @@
 import SidebarItem from "@/components/layout/sidebar/SidebarItem";
-import { navigation } from "@/constants/navigation.config";
-import SidebarSubHeader from "./SidebarSubHeader"
+import { navigation } from "@/constants/navigation";
+import SidebarSubHeader from "./SidebarSubHeader";
+import Divider from "@/components/ui/divider";
 
 interface SidebarNavigationProps {
   onItemClick?: () => void;
@@ -11,7 +12,7 @@ export default function SidebarNavigation({
 }: SidebarNavigationProps) {
   return (
     <>
-    <SidebarSubHeader title='Hola'/>
+    <SidebarSubHeader title='Principal'/>
     <nav className="space-y-1.5">
       {navigation
         .filter((item) => item.type === "main")
@@ -27,12 +28,13 @@ export default function SidebarNavigation({
     </nav>
     <div className="relative my-6 px-4">
   {/* Esta es la línea plana con degradado */}
-    <div 
-        className="h-px w-full bg-linear-to-r from-transparent via-slate-700 to-transparent opacity-70"
-        role="separator"
+    <Divider
+    variant="gradient"
+    spacing="lg"
+    className="px-4"
     />
     </div>
-    <SidebarSubHeader title='Adios'/>
+    <SidebarSubHeader title='Administración'/>
     <nav className="space-y-1.5">
       {navigation
         .filter((item) => item.type === "admin")

@@ -1,8 +1,9 @@
 import React from 'react';
 import { FaBell, FaSearch } from "react-icons/fa";
 import { MdOutlineMenu } from "react-icons/md";
-import UserMenu from "@/components/ui/user-menu/UserMenu";
+import UserMenu from "@/components/layout/user-menu/MenuItem";
 import  Logo  from "@/components/charts/logo"; // Ajusta la ruta o usa "@/charts/logo" según tus alias
+import Divider from "@/components/ui/divider";
 
 interface TopBarProps {
   onToggleSidebar: () => void;
@@ -10,16 +11,22 @@ interface TopBarProps {
 
 export const TopBar: React.FC<TopBarProps> = ({ onToggleSidebar }) => {
   return (
-    <header className="w-full bg-white border-b border-slate-200/80 px-6 py-3.5 flex items-center justify-between sticky top-0 z-20 shadow-xs">
+    <header className="w-full bg-white border-b border-slate-200/80 px-6 h-25 flex items-center justify-between sticky top-0 z-20 shadow-xs">
 
       {/* SECCIÓN IZQUIERDA: Logo + Botón Hamburguesa + Buscador */}
       <div className="flex items-center gap-4">
 
         {/* Espacio para el Logo */}
-        <div className="flex items-center gap-2 pr-2 border-r border-slate-200/80">
+        <div>
           <Logo />
         </div>
 
+        <Divider
+        vertical={true}
+        
+        />
+          
+        
         {/* Botón menú con interacción suave */}
         <button
           onClick={onToggleSidebar}
@@ -52,7 +59,10 @@ export const TopBar: React.FC<TopBarProps> = ({ onToggleSidebar }) => {
         </button>
 
         {/* Separador vertical fino */}
-        <div className="h-5 w-px bg-slate-200 mx-1" />
+        <Divider
+            vertical={true}
+            className="mx-1"
+        />
 
         {/* Menú de usuario (avatar + nombre + dropdown) */}
         <UserMenu

@@ -15,15 +15,15 @@ export default function MainLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col">
-      {/* TopBar en la parte superior */}
+    <div className="h-screen bg-slate-100 flex flex-col overflow-hidden">
+      {/* TopBar fija en la parte superior */}
       <TopBar onToggleSidebar={handleToggleSidebar} />
 
-      {/* Contenedor Flex: el Sidebar y el Main comparten el espacio de forma natural */}
-      <div className="flex flex-1 overflow-hidden">
+      {/* Área flexible debajo de la TopBar */}
+      <div className="flex flex-1 overflow-hidden relative">
         <Sidebar isOpen={sidebarOpen} onClose={handleCloseSidebar} />
 
-        {/* El Main crece de forma fluida (flex-1) conforme el Sidebar entra o sale */}
+        {/* Contenido principal con scroll independiente */}
         <main className="flex-1 p-6 md:p-8 overflow-y-auto w-full transition-all duration-300 ease-in-out">
           <div className="max-w-[1600px] mx-auto">
             <Outlet />

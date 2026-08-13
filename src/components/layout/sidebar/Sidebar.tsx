@@ -1,20 +1,16 @@
 import React from 'react';
-//import { NavLink } from 'react-router-dom';
 import SidebarNavigation from "./SidebarNavigation";
-
 import SidebarHeader from "./SidebarHeader";
-
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   return (
     <>
-      {/* TELÓN OSCURO (Backdrop solo en móviles/tablets) */}
+      {/* TELÓN OSCURO (Móviles) */}
       {isOpen && (
         <div
           onClick={onClose}
@@ -25,10 +21,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
       {/* PANEL LATERAL DEL SIDEBAR */}
       <aside
-      /* Posicionamiento en móvil: superpuesto (fixed) */
         className={`
           fixed lg:relative top-0 left-0 z-40 lg:z-auto
-          h-screen lg:h-auto w-64 bg-slate-900 text-slate-300 
+          h-full bg-slate-900 text-slate-300 
           flex flex-col justify-between p-4 
           border-r border-slate-800 
           transition-all duration-300 ease-in-out shrink-0
@@ -39,21 +34,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           }
         `}
       >
-        <div className="w-56"> {/* Ancho fijo interno para evitar que los textos colapsen feo al animar */}
-          
-         {/* Llama al Header de SidebarHeader.tsx */}
+        {/* Scroll interno por si hay muchos ítems en el menú */}
+        <div className="w-56 flex-1 overflow-y-auto pr-1">
           <SidebarHeader onClose={onClose} />
 
           <SidebarNavigation
-          onItemClick={() => {
-            if (window.innerWidth < 1024) {
-              onClose();
-            }
-          }}
-/>
+            onItemClick={() => {
+              if (window.innerWidth < 1024) {
+                onClose();
+              }
+            }}
+          />
         </div>
 
-        <div className="w-56 p-3 bg-slate-800/50 rounded-xl border border-slate-800 text-center mt-auto">
+        {/* Footer del Sidebar */}
+        <div className="w-56 p-3 bg-slate-800/50 rounded-xl border border-slate-800 text-center mt-auto shrink-0">
           <p className="text-[11px] font-medium text-slate-400">Sistema Activo</p>
           <p className="text-[10px] text-slate-500 mt-0.5">v1.0.0</p>
         </div>

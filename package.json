@@ -12,6 +12,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.110.9",
     "date-fns": "^4.4.0",
+    "ldrs": "^1.1.9",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-icons": "^5.7.0",
