@@ -28,6 +28,8 @@ const ChartCard: React.FC<ChartCardProps> = ({ title, description, isLoading, er
       )}
     </Card.Body>
   </Card>
+
+  
 );
 
 export default ChartCard;

@@ -1,4 +1,4 @@
-import React from "react";
+
 import ComponentSection from "@/components/ComponentSection/ComponentSection";
 import StatCard from "@/components/charts/StatCard";
 import MaterialesRecicladosChart from "@/components/charts/MaterialesRecicladosChart";

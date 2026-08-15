@@ -17,6 +17,7 @@ export function getCo2Factor(tipoResiduo: string): number {
 // Paleta compartida — mismo lenguaje visual que Badge/Toast (emerald/slate + acentos)
 export const CHART_COLORS = {
   primary: "#059669", // emerald-600
+  alter: ["#059669", "#0ea5e9", "#f59e0b", "#8b5cf6", "#ef4444", "#64748b"],
   categorical: ["#059669", "#0ea5e9", "#f59e0b", "#8b5cf6", "#ef4444", "#64748b"],
   tm: "#0ea5e9", // blue
   tv: "#64748b", // slate

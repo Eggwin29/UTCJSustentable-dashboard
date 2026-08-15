@@ -6,14 +6,14 @@ import type { InputSize, InputVariant } from "../input/inputConfig";
 import InputLabel from "../input/InputLabel";
 import { useDropdownValue } from "@/hooks/useDropdownValue";
 
-export interface DropdownOption {
+export interface SelectOption {
   value: string | number;
   label: string;
   icon?: React.ReactNode;
 }
 
-export interface DropdownProps {
-  options: DropdownOption[];
+export interface SelectProps {
+  options: SelectOption[];
   label?: string;
   helperText?: string;
   error?: string;
@@ -29,7 +29,7 @@ export interface DropdownProps {
   id?: string;
 }
 
-const Dropdown: React.FC<DropdownProps> = ({
+const Dropdown: React.FC<SelectProps> = ({
   options,
   label,
   helperText,

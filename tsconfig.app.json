@@ -22,10 +22,9 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
 
-    /* alias */
-    "baseUrl": ".",
+    /* Alias */
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     }
 
   },
