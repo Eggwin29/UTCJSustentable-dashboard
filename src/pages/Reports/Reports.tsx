@@ -23,7 +23,8 @@ export default function Reportes() {
       <section>
         <h1 className="text-3xl font-bold text-slate-800 dark:text-white">Reportes</h1>
         <p className="mt-2 text-slate-500 dark:text-slate-400">
-          Recolección de materiales y personal — datos de ejemplo, misma lógica que el reporte de PowerBI.
+          Indicadores históricos de recolección,
+          impacto ambiental y participación en UTCJ Sustentable.
         </p>
       </section>
 

@@ -39,6 +39,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      human_capital: {
+        Row: {
+          created_at: string
+          id: string
+          term: Database["public"]["Enums"]["academic_term"]
+          tm_tuesday: number
+          tv_thursday: number
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          term: Database["public"]["Enums"]["academic_term"]
+          tm_tuesday?: number
+          tv_thursday?: number
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          term?: Database["public"]["Enums"]["academic_term"]
+          tm_tuesday?: number
+          tv_thursday?: number
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
       materials: {
         Row: {
           active: boolean
@@ -92,37 +122,43 @@ export type Database = {
       }
       waste_collections: {
         Row: {
-          collection_date: string
+          collection_date: string | null
           created_at: string
-          created_by: string
+          created_by: string | null
           id: string
           kilograms: number
           location: string | null
           material_id: string
           notes: string | null
+          record_type: Database["public"]["Enums"]["waste_record_type"]
           updated_at: string
+          year: number
         }
         Insert: {
-          collection_date: string
+          collection_date?: string | null
           created_at?: string
-          created_by: string
+          created_by?: string | null
           id?: string
           kilograms: number
           location?: string | null
           material_id: string
           notes?: string | null
+          record_type?: Database["public"]["Enums"]["waste_record_type"]
           updated_at?: string
+          year: number
         }
         Update: {
-          collection_date?: string
+          collection_date?: string | null
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           id?: string
           kilograms?: number
           location?: string | null
           material_id?: string
           notes?: string | null
+          record_type?: Database["public"]["Enums"]["waste_record_type"]
           updated_at?: string
+          year?: number
         }
         Relationships: [
           {
@@ -149,7 +185,9 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
     }
     Enums: {
+      academic_term: "E-A" | "M-A" | "S-D"
       user_role: "admin" | "user"
+      waste_record_type: "historical" | "collection"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -280,7 +318,9 @@ export const Constants = {
   },
   public: {
     Enums: {
+      academic_term: ["E-A", "M-A", "S-D"],
       user_role: ["admin", "user"],
+      waste_record_type: ["historical", "collection"],
     },
   },
 } as const

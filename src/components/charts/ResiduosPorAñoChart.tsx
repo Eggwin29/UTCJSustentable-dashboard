@@ -2,14 +2,25 @@ import React from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import ChartCard from "./ChartCard";
 import { useAsyncData } from "@/hooks/useAsyncData";
-import { getResiduosPorAño } from "@/services/residuosService";
+import { getResiduosPorAño, getAvailableYears} from "@/services/residuosService";
 import { CHART_COLORS } from "@/config/reportesConfig";
 
-const AÑOS = [2022, 2023, 2024, 2025];
+
 
 async function fetchAllYears() {
-  const results = await Promise.all(AÑOS.map((año) => getResiduosPorAño(año)));
-  return AÑOS.map((año, i) => ({ año, data: results[i] }));
+  const years =
+    await getAvailableYears();
+
+  const results = await Promise.all(
+    years.map((year) =>
+      getResiduosPorAño(year)
+    )
+  );
+
+  return years.map((year, index) => ({
+    año: year,
+    data: results[index],
+  }));
 }
 
 const ResiduosPorAñoChart: React.FC = () => {

@@ -1,3 +1,12 @@
 export type { Material } from "./material";
-export type { Collection } from "./collection";
-export type { Profile, UserRole } from "./profile";
+
+export type {
+  Collection,
+  CollectionListItem,
+  CreateCollectionInput,
+} from "./collection";
+
+export type {
+  Profile,
+  UserRole,
+} from "./profile";

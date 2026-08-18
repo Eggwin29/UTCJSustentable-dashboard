@@ -1,99 +1,241 @@
-import { residuosMock } from "@/data/mock/residuos.mock";
-import { getCo2Factor } from "@/config/reportesConfig";
-import type { ResiduoRecord, MaterialTotal, AñoTotal } from "@/types/reportes";
-import { memoizeAsync } from "@/utils/memoizeAsync";
+import { supabase } from "@/lib/supabase";
 
+import type {
+  ResiduoRecord,
+  MaterialTotal,
+  AñoTotal,
+} from "@/types/reportes";
 
-const residuosCache = memoizeAsync(async (): Promise<ResiduoRecord[]> => {
-  await new Promise((r) => setTimeout(r, SIMULATED_DELAY));
-  return residuosMock;
-});
-
-const SIMULATED_DELAY = 400;
-
-// Punto único de reemplazo cuando exista la API real:
-// export async function fetchResiduos(): Promise<ResiduoRecord[]> {
-//   const res = await fetch("/api/residuos");
-//   return res.json();
-// }
-async function fetchResiduos(): Promise<ResiduoRecord[]> {
-  return residuosCache.run();
-  await new Promise((r) => setTimeout(r, SIMULATED_DELAY));
-  return residuosMock;
+interface ResiduoConFactor extends ResiduoRecord {
+  co2Factor: number;
 }
+
+// =====================================================
+// OBTENER DATOS BASE DESDE SUPABASE
+// =====================================================
+
+async function fetchResiduos(): Promise<ResiduoConFactor[]> {
+  const { data, error } = await supabase
+    .from("waste_collections")
+    .select(`
+      year,
+      kilograms,
+      materials (
+        name,
+        co2_factor
+      )
+    `)
+    .order("year", {
+      ascending: true,
+    });
+
+  if (error) {
+    throw error;
+  }
+
+  return data.map((record) => {
+    if (!record.materials) {
+      throw new Error(
+        "Se encontró una recolección sin material relacionado."
+      );
+    }
+
+    return {
+      año: record.year,
+      tipoResiduo: record.materials.name,
+      kilogramos: Number(record.kilograms),
+      co2Factor: Number(record.materials.co2_factor),
+    };
+  });
+}
+
+// =====================================================
+// TOTAL RECOLECTADO
+// =====================================================
 
 export async function getTotalHistorico(): Promise<number> {
   const data = await fetchResiduos();
-  return data.reduce((sum, r) => sum + r.kilogramos, 0);
+
+  return data.reduce(
+    (sum, record) => sum + record.kilogramos,
+    0
+  );
 }
+
+// =====================================================
+// CO2 TOTAL
+// =====================================================
 
 export async function getCo2Total(): Promise<number> {
   const data = await fetchResiduos();
-  return data.reduce((sum, r) => sum + r.kilogramos * getCo2Factor(r.tipoResiduo), 0);
+
+  return data.reduce(
+    (sum, record) =>
+      sum + record.kilogramos * record.co2Factor,
+    0
+  );
 }
+
+// =====================================================
+// TOTALES POR MATERIAL
+// =====================================================
 
 export async function getMaterialTotals(): Promise<MaterialTotal[]> {
   const data = await fetchResiduos();
-  const map = new Map<string, number>();
-  for (const r of data) {
-    map.set(r.tipoResiduo, (map.get(r.tipoResiduo) ?? 0) + r.kilogramos);
+
+  const materialMap = new Map<
+    string,
+    {
+      totalKg: number;
+      co2Evitado: number;
+    }
+  >();
+
+  for (const record of data) {
+    const current = materialMap.get(record.tipoResiduo) ?? {
+      totalKg: 0,
+      co2Evitado: 0,
+    };
+
+    current.totalKg += record.kilogramos;
+
+    current.co2Evitado +=
+      record.kilogramos * record.co2Factor;
+
+    materialMap.set(
+      record.tipoResiduo,
+      current
+    );
   }
-  return Array.from(map.entries())
-    .map(([tipoResiduo, totalKg]) => ({
+
+  return Array.from(materialMap.entries())
+    .map(([tipoResiduo, values]) => ({
       tipoResiduo,
-      totalKg,
-      co2Evitado: totalKg * getCo2Factor(tipoResiduo),
+      totalKg: values.totalKg,
+      co2Evitado: values.co2Evitado,
     }))
     .sort((a, b) => b.totalKg - a.totalKg);
 }
 
+// =====================================================
+// TOTALES POR AÑO
+// =====================================================
+
 export async function getAñoTotals(): Promise<AñoTotal[]> {
   const data = await fetchResiduos();
-  const map = new Map<number, number>();
-  for (const r of data) {
-    map.set(r.año, (map.get(r.año) ?? 0) + r.kilogramos);
-  }
-  const totalGeneral = Array.from(map.values()).reduce((a, b) => a + b, 0);
 
-  return Array.from(map.entries())
-    .map(([año, totalKg]) => ({
+  const yearMap = new Map<
+    number,
+    {
+      totalKg: number;
+      co2Evitado: number;
+    }
+  >();
+
+  for (const record of data) {
+    const current = yearMap.get(record.año) ?? {
+      totalKg: 0,
+      co2Evitado: 0,
+    };
+
+    current.totalKg += record.kilogramos;
+
+    current.co2Evitado +=
+      record.kilogramos * record.co2Factor;
+
+    yearMap.set(record.año, current);
+  }
+
+  const totalGeneral = Array.from(
+    yearMap.values()
+  ).reduce(
+    (sum, year) => sum + year.totalKg,
+    0
+  );
+
+  return Array.from(yearMap.entries())
+    .map(([año, values]) => ({
       año,
-      totalKg,
-      co2Evitado: 0, // se calcula abajo por material real si se necesita desglose por año
-      porcentaje: (totalKg / totalGeneral) * 100,
+      totalKg: values.totalKg,
+      co2Evitado: values.co2Evitado,
+      porcentaje:
+        totalGeneral > 0
+          ? (values.totalKg / totalGeneral) * 100
+          : 0,
     }))
     .sort((a, b) => a.año - b.año);
 }
 
-export async function getResiduosPorAño(año: number): Promise<MaterialTotal[]> {
+// =====================================================
+// MATERIALES POR AÑO
+// =====================================================
+
+export async function getResiduosPorAño(
+  año: number
+): Promise<MaterialTotal[]> {
   const data = await fetchResiduos();
-  return data
-    .filter((r) => r.año === año)
-    .map((r) => ({
-      tipoResiduo: r.tipoResiduo,
-      totalKg: r.kilogramos,
-      co2Evitado: r.kilogramos * getCo2Factor(r.tipoResiduo),
-    }));
+
+  const materialMap = new Map<
+    string,
+    {
+      totalKg: number;
+      co2Evitado: number;
+    }
+  >();
+
+  for (const record of data) {
+    if (record.año !== año) {
+      continue;
+    }
+
+    const current = materialMap.get(record.tipoResiduo) ?? {
+      totalKg: 0,
+      co2Evitado: 0,
+    };
+
+    current.totalKg += record.kilogramos;
+
+    current.co2Evitado +=
+      record.kilogramos * record.co2Factor;
+
+    materialMap.set(
+      record.tipoResiduo,
+      current
+    );
+  }
+
+  return Array.from(materialMap.entries())
+    .map(([tipoResiduo, values]) => ({
+      tipoResiduo,
+      totalKg: values.totalKg,
+      co2Evitado: values.co2Evitado,
+    }))
+    .sort((a, b) =>
+      a.tipoResiduo.localeCompare(
+        b.tipoResiduo,
+        "es"
+      )
+    );
 }
+
+// =====================================================
+// CO2 POR AÑO
+// =====================================================
 
 export async function getCo2PorAño(): Promise<AñoTotal[]> {
+  return getAñoTotals();
+}
+
+// =====================================================
+// AÑOS DISPONIBLES
+// =====================================================
+
+export async function getAvailableYears(): Promise<number[]> {
   const data = await fetchResiduos();
-  const kgMap = new Map<number, number>();
-  const co2Map = new Map<number, number>();
 
-  for (const r of data) {
-    kgMap.set(r.año, (kgMap.get(r.año) ?? 0) + r.kilogramos);
-    co2Map.set(r.año, (co2Map.get(r.año) ?? 0) + r.kilogramos * getCo2Factor(r.tipoResiduo));
-  }
-
-  const totalGeneral = Array.from(kgMap.values()).reduce((a, b) => a + b, 0);
-
-  return Array.from(kgMap.entries())
-    .map(([año, totalKg]) => ({
-      año,
-      totalKg,
-      co2Evitado: co2Map.get(año) ?? 0,
-      porcentaje: (totalKg / totalGeneral) * 100,
-    }))
-    .sort((a, b) => a.año - b.año);
+  return Array.from(
+    new Set(
+      data.map((record) => record.año)
+    )
+  ).sort((a, b) => a - b);
 }

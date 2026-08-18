@@ -1,46 +1,106 @@
-import React from "react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  LabelList,
+} from "recharts";
+
 import ChartCard from "./ChartCard";
+
 import { useAsyncData } from "@/hooks/useAsyncData";
-import { getResiduosPorAño } from "@/services/residuosService";
+import { getCo2PorAño } from "@/services/residuosService";
+
 import { CHART_COLORS } from "@/config/reportesConfig";
 
-const AÑOS = [2022, 2023, 2024, 2025];
-
-async function fetchAllYears() {
-  const results = await Promise.all(AÑOS.map((año) => getResiduosPorAño(año)));
-  return AÑOS.map((año, i) => ({ año, data: results[i] }));
-}
-
-const ResiduosPorAñoChart: React.FC = () => {
-  const { data, isLoading, error } = useAsyncData(fetchAllYears);
+export default function Co2PorAñoChart() {
+  const {
+    data,
+    isLoading,
+    error,
+  } = useAsyncData(getCo2PorAño);
 
   return (
-    <ChartCard title="Recolección por año y material" isLoading={isLoading} error={error}>
-      <div className="grid grid-cols-2 gap-4">
-        {(data ?? []).map(({ año, data: yearData }) => (
-          <div key={año}>
-            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 text-center">{año}</p>
-            <ResponsiveContainer width="100%" height={140} debounce={150}>
-              <BarChart data={yearData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-                <XAxis dataKey="tipoResiduo" tick={{ fontSize: 9, fill: "#64748b" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 9, fill: "#64748b" }} axisLine={false} tickLine={false} width={30} />
-                <Tooltip
-                  formatter={(v) => [
-                    typeof v === "number" ? `${v.toLocaleString("es-MX")} kg` : `${v ?? 0} kg`,
-                    "Total",
-                  ]}
-                  contentStyle={{ fontSize: 12, borderRadius: 8 }}
-                />
-                <Bar dataKey="totalKg" fill={CHART_COLORS.primary} radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        ))}
-      </div>
+    <ChartCard
+      title="CO₂ Evitado por Año"
+      description="Impacto ambiental estimado por año."
+      isLoading={isLoading}
+      error={error}
+    >
+      <ResponsiveContainer
+        width="100%"
+        height={280}
+        debounce={150}
+      >
+        <BarChart
+          data={data ?? []}
+          margin={{
+            top: 25,
+            right: 10,
+            left: 0,
+            bottom: 10,
+          }}
+        >
+          <CartesianGrid
+            strokeDasharray="3 3"
+            stroke="#e2e8f0"
+            vertical={false}
+          />
+
+          <XAxis
+            dataKey="año"
+            tick={{
+              fontSize: 12,
+              fill: "#64748b",
+            }}
+            axisLine={false}
+            tickLine={false}
+          />
+
+          <YAxis
+            tick={{
+              fontSize: 12,
+              fill: "#64748b",
+            }}
+            axisLine={false}
+            tickLine={false}
+          />
+
+          <Tooltip
+            formatter={(value) => [
+              typeof value === "number"
+                ? `${value.toLocaleString("es-MX", {
+                    maximumFractionDigits: 2,
+                  })} kg`
+                : `${value ?? 0} kg`,
+
+              "CO₂ evitado",
+            ]}
+          />
+
+          <Bar
+            dataKey="co2Evitado"
+            fill={CHART_COLORS.categorical[1]}
+            radius={[6, 6, 0, 0]}
+          >
+            <LabelList
+              dataKey="co2Evitado"
+              position="top"
+              formatter={(value) =>
+                typeof value === "number"
+                  ? value.toLocaleString("es-MX", {
+                      maximumFractionDigits: 2,
+                    })
+                  : ""
+              }
+              fontSize={11}
+            />
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
     </ChartCard>
   );
-};
-
-export default ResiduosPorAñoChart;
+}

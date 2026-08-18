@@ -58,12 +58,12 @@ const UserMenuContent: React.FC<UserMenuContentProps> = ({
       <UserMenuItem
         icon={<FiUsers size={16} />}
         label="Usuarios"
-        onClick={() => onNavigate("/usuarios")}
+        onClick={() => onNavigate("/users")}
       />
       <UserMenuItem
         icon={<FiSettings size={16} />}
         label="Configuración"
-        onClick={() => onNavigate("/configuracion")}
+        onClick={() => onNavigate("/settings")}
       />
     </UserMenuSection>
 

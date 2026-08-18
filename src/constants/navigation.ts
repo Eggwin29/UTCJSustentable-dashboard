@@ -1,26 +1,33 @@
-/*import {
-  RxDashboard,
-  RxLayers,
-  RxBarChart,
-  RxPerson,
-  RxGear,
-} from "react-icons/rx";*/
-import { FiLayers } from "react-icons/fi";
-import { MdOutlineDashboard, MdBarChart,  } from "react-icons/md";
-import { LuUsersRound } from "react-icons/lu";
-import { GoGear } from "react-icons/go";
+import {
+  FiLayers,
+} from "react-icons/fi";
 
-import { TbAlienFilled } from "react-icons/tb";
-import type { IconType } from "react-icons";
+import {
+  MdOutlineDashboard,
+  MdBarChart,
+} from "react-icons/md";
+
+import {
+  LuUsersRound,
+} from "react-icons/lu";
+
+import {
+  GoGear,
+} from "react-icons/go";
+
+import type {
+  IconType,
+} from "react-icons";
 
 export interface NavigationItem {
   name: string;
   path: string;
-  type:"main"|"admin";
+  type: "main" | "admin";
   icon: IconType;
 }
 
-export const navigation: NavigationItem[] = [
+export const navigation:
+  NavigationItem[] = [
   {
     name: "Dashboard",
     path: "/",
@@ -35,8 +42,8 @@ export const navigation: NavigationItem[] = [
   },
   {
     name: "Reportes",
-    type: "main",
     path: "/reports",
+    type: "main",
     icon: MdBarChart,
   },
   {
@@ -50,11 +57,5 @@ export const navigation: NavigationItem[] = [
     path: "/settings",
     type: "admin",
     icon: GoGear,
-  },
-  {
-    name: "NotFound",
-    path: "/loschones",
-    type: "admin",
-    icon: TbAlienFilled,
   },
 ];

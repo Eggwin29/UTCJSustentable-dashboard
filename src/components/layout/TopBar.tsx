@@ -1,33 +1,86 @@
-import React from 'react';
+import React from "react";
 import { FaBell, FaSearch } from "react-icons/fa";
 import { MdOutlineMenu } from "react-icons/md";
+import { useNavigate } from "react-router-dom";
+
 import UserMenu from "@/components/layout/user-menu/MenuItem";
-import  Logo  from "@/components/charts/logo"; // Ajusta la ruta o usa "@/charts/logo" según tus alias
+import Logo from "@/components/charts/logo";
 import Divider from "@/components/ui/divider";
+
+import { useAuth } from "@/context/auth/useAuth";
+import { authService } from "@/services/authService";
+import { useToast } from "@/components/ui/toast/toast";
 
 interface TopBarProps {
   onToggleSidebar: () => void;
 }
 
-export const TopBar: React.FC<TopBarProps> = ({ onToggleSidebar }) => {
+export const TopBar: React.FC<TopBarProps> = ({
+  onToggleSidebar,
+}) => {
+  const navigate = useNavigate();
+
+  const { user, profile, profileLoading } = useAuth();
+  const { toast } = useToast();
+
+  // =====================================================
+  // DATOS DEL USUARIO
+  // =====================================================
+
+  const fullName = profile
+    ? `${profile.firstName} ${profile.lastName}`.trim()
+    : "";
+
+  const displayName =
+    fullName ||
+    user?.email ||
+    "Usuario";
+
+  const displayRole = profileLoading
+    ? "Cargando..."
+    : profile?.role === "admin"
+      ? "Administrador"
+      : "Usuario";
+
+  // =====================================================
+  // CERRAR SESIÓN
+  // =====================================================
+
+  const handleSignOut = async () => {
+    try {
+      await authService.signOut();
+
+      toast.success({
+        title: "Sesión cerrada",
+        description: "Has cerrado sesión correctamente.",
+      });
+
+      navigate("/login", {
+        replace: true,
+      });
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+
+      toast.error({
+        title: "No se pudo cerrar sesión",
+        description:
+          "Ocurrió un problema al intentar cerrar tu sesión.",
+      });
+    }
+  };
+
   return (
     <header className="w-full bg-white border-b border-slate-200/80 px-6 h-25 flex items-center justify-between sticky top-0 z-20 shadow-xs">
 
-      {/* SECCIÓN IZQUIERDA: Logo + Botón Hamburguesa + Buscador */}
+      {/* SECCIÓN IZQUIERDA */}
       <div className="flex items-center gap-4">
 
-        {/* Espacio para el Logo */}
         <div>
           <Logo />
         </div>
 
-        <Divider
-        vertical={true}
-        
-        />
-          
-        
-        {/* Botón menú con interacción suave */}
+        <Divider vertical={true} />
+
         <button
           onClick={onToggleSidebar}
           className="p-2.5 rounded-xl text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition-all duration-200 active:scale-95 focus:outline-none"
@@ -36,9 +89,9 @@ export const TopBar: React.FC<TopBarProps> = ({ onToggleSidebar }) => {
           <MdOutlineMenu className="w-6 h-6" />
         </button>
 
-        {/* Buscador Rápido tipo cápsula con fondo Slate */}
         <div className="relative hidden md:block">
           <FaSearch className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+
           <input
             type="text"
             placeholder="Buscar..."
@@ -47,39 +100,36 @@ export const TopBar: React.FC<TopBarProps> = ({ onToggleSidebar }) => {
         </div>
       </div>
 
-      {/* SECCIÓN DERECHA: Notificaciones y Perfil */}
+      {/* SECCIÓN DERECHA */}
       <div className="flex items-center gap-3">
-        {/* Botón Notificaciones */}
+
         <button
           className="relative p-2.5 rounded-xl text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition-all duration-200 focus:outline-none"
           aria-label="Notificaciones"
         >
           <FaBell className="w-4 h-4" />
-          <span className="absolute top-2 right-2 w-2 h-2 bg-emerald-500 rounded-full ring-2 ring-white"></span>
+
+          <span className="absolute top-2 right-2 w-2 h-2 bg-emerald-500 rounded-full ring-2 ring-white" />
         </button>
 
-        {/* Separador vertical fino */}
         <Divider
-            vertical={true}
-            className="mx-1"
+          vertical={true}
+          className="mx-1"
         />
 
-        {/* Menú de usuario (avatar + nombre + dropdown) */}
         <UserMenu
-          name="Edwin Martinez"
-          role="Admin"
+          name={displayName}
+          role={displayRole}
           organization="UTCJ Sustentable"
-          onNavigate={(path) => {
-            // TODO: conectar con tu router, ej: navigate(path)
-            console.log("Navegar a:", path);
-          }}
-          onSignOut={() => {
-            // TODO: conectar con tu logica de logout
-            console.log("Cerrar sesión");
-          }}
-        />
-      </div>
 
+          onNavigate={(path) => {
+            navigate(path);
+          }}
+
+          onSignOut={handleSignOut}
+        />
+
+      </div>
     </header>
   );
 };
