@@ -1,23 +1,12 @@
+import { FiLayers } from "react-icons/fi";
+import { GoGear } from "react-icons/go";
+import { LuUsersRound } from "react-icons/lu";
 import {
-  FiLayers,
-} from "react-icons/fi";
-
-import {
-  MdOutlineDashboard,
   MdBarChart,
+  MdOutlineDashboard,
 } from "react-icons/md";
 
-import {
-  LuUsersRound,
-} from "react-icons/lu";
-
-import {
-  GoGear,
-} from "react-icons/go";
-
-import type {
-  IconType,
-} from "react-icons";
+import type { IconType } from "react-icons";
 
 export interface NavigationItem {
   name: string;
@@ -26,8 +15,7 @@ export interface NavigationItem {
   icon: IconType;
 }
 
-export const navigation:
-  NavigationItem[] = [
+export const navigation: NavigationItem[] = [
   {
     name: "Dashboard",
     path: "/",

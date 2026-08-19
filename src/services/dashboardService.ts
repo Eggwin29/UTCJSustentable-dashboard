@@ -1,43 +1,45 @@
 import { supabase } from "@/lib/supabase";
 
-import type { CollectionListItem } from "@/types/collection";
+import type {
+  CollectionListItem,
+} from "@/types/collection";
 
 export interface DashboardSummary {
   totalKilograms: number;
   totalCo2: number;
   collectionsCount: number;
   activeMaterialsCount: number;
-  recentCollections: CollectionListItem[];
+  recentCollections:
+    CollectionListItem[];
 }
 
 export const dashboardService = {
-  async getSummary(): Promise<DashboardSummary> {
+  async getSummary():
+    Promise<DashboardSummary> {
     const [
-      wasteResult,
-      materialsResult,
+      collectionsResult,
+      activeMaterialsResult,
     ] = await Promise.all([
       supabase
         .from("waste_collections")
-        .select(
-          `
+        .select(`
+          id,
+          year,
+          record_type,
+          collection_date,
+          material_id,
+          kilograms,
+          co2_factor_applied,
+          location,
+          notes,
+          created_by,
+          created_at,
+          updated_at,
+          materials (
             id,
-            year,
-            record_type,
-            collection_date,
-            material_id,
-            kilograms,
-            location,
-            notes,
-            created_by,
-            created_at,
-            updated_at,
-            materials (
-              id,
-              name,
-              co2_factor
-            )
-          `
-        )
+            name
+          )
+        `)
         .order("created_at", {
           ascending: false,
         }),
@@ -51,12 +53,12 @@ export const dashboardService = {
         .eq("active", true),
     ]);
 
-    if (wasteResult.error) {
-      throw wasteResult.error;
+    if (collectionsResult.error) {
+      throw collectionsResult.error;
     }
 
-    if (materialsResult.error) {
-      throw materialsResult.error;
+    if (activeMaterialsResult.error) {
+      throw activeMaterialsResult.error;
     }
 
     let totalKilograms = 0;
@@ -66,22 +68,20 @@ export const dashboardService = {
     const recentCollections:
       CollectionListItem[] = [];
 
-    for (const record of wasteResult.data) {
-      if (!record.materials) {
-        throw new Error(
-          `El registro ${record.id} no tiene un material relacionado.`
-        );
-      }
-
+    for (
+      const record
+      of collectionsResult.data
+    ) {
       const kilograms =
         Number(record.kilograms);
 
       const co2Factor =
         Number(
-          record.materials.co2_factor
+          record.co2_factor_applied
         );
 
       totalKilograms += kilograms;
+
       totalCo2 +=
         kilograms * co2Factor;
 
@@ -111,17 +111,22 @@ export const dashboardService = {
 
       recentCollections.push({
         id: record.id,
-        date: record.collection_date,
+        date:
+          record.collection_date,
         materialId:
           record.material_id,
-        materialName:
-          record.materials.name,
         kilograms,
         location: record.location,
         notes: record.notes,
-        createdBy: record.created_by,
-        createdAt: record.created_at,
-        updatedAt: record.updated_at,
+        createdBy:
+          record.created_by,
+        createdAt:
+          record.created_at,
+        updatedAt:
+          record.updated_at,
+        materialName:
+          record.materials?.name ??
+          "Sin material",
       });
     }
 
@@ -129,8 +134,11 @@ export const dashboardService = {
       totalKilograms,
       totalCo2,
       collectionsCount,
+
       activeMaterialsCount:
-        materialsResult.count ?? 0,
+        activeMaterialsResult.count ??
+        0,
+
       recentCollections,
     };
   },

@@ -122,6 +122,7 @@ export type Database = {
       }
       waste_collections: {
         Row: {
+          co2_factor_applied: number
           collection_date: string | null
           created_at: string
           created_by: string | null
@@ -135,6 +136,7 @@ export type Database = {
           year: number
         }
         Insert: {
+          co2_factor_applied?: number
           collection_date?: string | null
           created_at?: string
           created_by?: string | null
@@ -148,6 +150,7 @@ export type Database = {
           year: number
         }
         Update: {
+          co2_factor_applied?: number
           collection_date?: string | null
           created_at?: string
           created_by?: string | null

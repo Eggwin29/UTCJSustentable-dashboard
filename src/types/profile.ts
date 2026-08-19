@@ -8,3 +8,8 @@ export interface Profile {
   active: boolean;
   createdAt: string;
 }
+
+export interface UpdateProfileAccessInput {
+  role: UserRole;
+  active: boolean;
+}

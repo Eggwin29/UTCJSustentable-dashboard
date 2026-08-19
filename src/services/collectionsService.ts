@@ -1,10 +1,27 @@
 import { supabase } from "@/lib/supabase";
+import { invalidateReportesCache } from "@/services/reportsService";
 
 import type {
   CollectionListItem,
   CreateCollectionInput,
   UpdateCollectionInput,
 } from "@/types/collection";
+
+const COLLECTION_SELECT = `
+  id,
+  collection_date,
+  material_id,
+  kilograms,
+  location,
+  notes,
+  created_by,
+  created_at,
+  updated_at,
+  materials (
+    id,
+    name
+  )
+` as const;
 
 function getCollectionYear(date: string): number {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
@@ -17,30 +34,10 @@ function getCollectionYear(date: string): number {
 }
 
 export const collectionsService = {
-  // =====================================================
-  // OBTENER RECOLECCIONES
-  // =====================================================
-
   async getAll(): Promise<CollectionListItem[]> {
     const { data, error } = await supabase
       .from("waste_collections")
-      .select(
-        `
-          id,
-          collection_date,
-          material_id,
-          kilograms,
-          location,
-          notes,
-          created_by,
-          created_at,
-          updated_at,
-          materials (
-            id,
-            name
-          )
-        `
-      )
+      .select(COLLECTION_SELECT)
       .eq("record_type", "collection")
       .order("collection_date", {
         ascending: false,
@@ -71,15 +68,10 @@ export const collectionsService = {
         createdAt: collection.created_at,
         updatedAt: collection.updated_at,
         materialName:
-          collection.materials?.name ??
-          "Sin material",
+          collection.materials?.name ?? "Sin material",
       };
     });
   },
-
-  // =====================================================
-  // CREAR RECOLECCIÓN
-  // =====================================================
 
   async create(
     input: CreateCollectionInput
@@ -94,39 +86,20 @@ export const collectionsService = {
         collection_date: input.date,
         material_id: input.materialId,
         kilograms: input.kilograms,
-        location:
-          input.location?.trim() || null,
-        notes:
-          input.notes?.trim() || null,
+        location: input.location?.trim() || null,
+        notes: input.notes?.trim() || null,
         created_by: input.createdBy,
       })
-      .select(
-        `
-          id,
-          collection_date,
-          material_id,
-          kilograms,
-          location,
-          notes,
-          created_by,
-          created_at,
-          updated_at,
-          materials (
-            id,
-            name
-          )
-        `
-      )
+      .select(COLLECTION_SELECT)
       .single();
 
     if (error) {
       throw error;
     }
 
-    if (
-      !data.collection_date ||
-      !data.created_by
-    ) {
+    invalidateReportesCache();
+
+    if (!data.collection_date || !data.created_by) {
       throw new Error(
         "La recolección creada no tiene fecha o creador."
       );
@@ -143,14 +116,9 @@ export const collectionsService = {
       createdAt: data.created_at,
       updatedAt: data.updated_at,
       materialName:
-        data.materials?.name ??
-        "Sin material",
+        data.materials?.name ?? "Sin material",
     };
   },
-
-  // =====================================================
-  // ACTUALIZAR RECOLECCIÓN
-  // =====================================================
 
   async update(
     id: string,
@@ -165,30 +133,12 @@ export const collectionsService = {
         collection_date: input.date,
         material_id: input.materialId,
         kilograms: input.kilograms,
-        location:
-          input.location?.trim() || null,
-        notes:
-          input.notes?.trim() || null,
+        location: input.location?.trim() || null,
+        notes: input.notes?.trim() || null,
       })
       .eq("id", id)
       .eq("record_type", "collection")
-      .select(
-        `
-          id,
-          collection_date,
-          material_id,
-          kilograms,
-          location,
-          notes,
-          created_by,
-          created_at,
-          updated_at,
-          materials (
-            id,
-            name
-          )
-        `
-      )
+      .select(COLLECTION_SELECT)
       .maybeSingle();
 
     if (error) {
@@ -201,10 +151,9 @@ export const collectionsService = {
       );
     }
 
-    if (
-      !data.collection_date ||
-      !data.created_by
-    ) {
+    invalidateReportesCache();
+
+    if (!data.collection_date || !data.created_by) {
       throw new Error(
         "La recolección actualizada no tiene fecha o creador."
       );
@@ -221,14 +170,9 @@ export const collectionsService = {
       createdAt: data.created_at,
       updatedAt: data.updated_at,
       materialName:
-        data.materials?.name ??
-        "Sin material",
+        data.materials?.name ?? "Sin material",
     };
   },
-
-  // =====================================================
-  // ELIMINAR RECOLECCIÓN
-  // =====================================================
 
   async remove(id: string): Promise<void> {
     const { data, error } = await supabase
@@ -248,5 +192,7 @@ export const collectionsService = {
         "La recolección no existe o no tienes permiso para eliminarla."
       );
     }
+
+    invalidateReportesCache();
   },
 };

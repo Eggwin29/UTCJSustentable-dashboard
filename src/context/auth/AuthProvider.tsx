@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -16,44 +17,78 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-export function AuthProvider({ children }: AuthProviderProps) {
-  const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
+export function AuthProvider({
+  children,
+}: AuthProviderProps) {
+  const [session, setSession] =
+    useState<Session | null>(null);
 
-  const [loading, setLoading] = useState(true);
-  const [profileLoading, setProfileLoading] = useState(false);
+  const [profile, setProfile] =
+    useState<Profile | null>(null);
 
-  // =====================================================
-  // SESIÓN
-  // =====================================================
+  const [loading, setLoading] =
+    useState(true);
+
+  const [profileLoading, setProfileLoading] =
+    useState(false);
+
+  const [profileError, setProfileError] =
+    useState<Error | null>(null);
+
+  const currentUserIdRef =
+    useRef<string | null>(null);
 
   useEffect(() => {
-    async function loadSession() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+    let mounted = true;
 
-      setSession(session);
+    function applySession(
+      nextSession: Session | null
+    ) {
+      if (!mounted) {
+        return;
+      }
+
+      const nextUserId =
+        nextSession?.user.id ?? null;
+
+      const userChanged =
+        currentUserIdRef.current !== nextUserId;
+
+      currentUserIdRef.current = nextUserId;
+
+      setSession(nextSession);
       setLoading(false);
+
+      if (userChanged) {
+        setProfile(null);
+        setProfileError(null);
+        setProfileLoading(Boolean(nextUserId));
+      }
     }
 
-    loadSession();
+    async function loadSession() {
+      const {
+        data: { session: initialSession },
+      } = await supabase.auth.getSession();
+
+      applySession(initialSession);
+    }
+
+    void loadSession();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setLoading(false);
-    });
+    } = supabase.auth.onAuthStateChange(
+      (_event, nextSession) => {
+        applySession(nextSession);
+      }
+    );
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, []);
-
-  // =====================================================
-  // PERFIL
-  // =====================================================
 
   useEffect(() => {
     let cancelled = false;
@@ -63,15 +98,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
     async function loadProfile() {
       if (!userId) {
         setProfile(null);
+        setProfileError(null);
         setProfileLoading(false);
         return;
       }
 
+      setProfile(null);
+      setProfileError(null);
       setProfileLoading(true);
 
       try {
         const userProfile =
-          await profileService.getByUserId(userId);
+          await profileService.getByUserId(
+            userId
+          );
 
         if (!cancelled) {
           setProfile(userProfile);
@@ -83,7 +123,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
         );
 
         if (!cancelled) {
-          setProfile(null);
+          setProfileError(
+            error instanceof Error
+              ? error
+              : new Error(
+                  "No se pudo obtener el perfil."
+                )
+          );
         }
       } finally {
         if (!cancelled) {
@@ -92,7 +138,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     }
 
-    loadProfile();
+    void loadProfile();
 
     return () => {
       cancelled = true;
@@ -107,6 +153,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         profile,
         loading,
         profileLoading,
+        profileError,
       }}
     >
       {children}

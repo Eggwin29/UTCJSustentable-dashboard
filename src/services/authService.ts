@@ -1,15 +1,19 @@
 import { supabase } from "@/lib/supabase";
+import { invalidateReportesCache } from "@/services/reportsService";
 
 export const authService = {
   async signIn(email: string, password: string) {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { data, error } =
+      await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
     if (error) {
       throw error;
     }
+
+    invalidateReportesCache();
 
     return data;
   },
@@ -20,6 +24,8 @@ export const authService = {
     if (error) {
       throw error;
     }
+
+    invalidateReportesCache();
   },
 
   async getUser() {

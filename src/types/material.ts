@@ -5,3 +5,10 @@ export interface Material {
   active: boolean;
   createdAt: string;
 }
+export interface CreateMaterialInput {
+  name: string;
+  co2Factor: number;
+}
+
+export type UpdateMaterialInput =
+  CreateMaterialInput;
