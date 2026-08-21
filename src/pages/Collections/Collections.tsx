@@ -10,20 +10,46 @@ import {
   FiTrash2,
 } from "react-icons/fi";
 
-import Button from "@/components/ui/button";
-import { Table } from "@/components/ui/table";
-import { useConfirmModal } from "@/components/ui/confirm-modal";
-import { useToast } from "@/components/ui/toast/toast";
-
 import CollectionForm from "@/components/forms/CollectionForm";
+import Button from "@/components/ui/button";
 
-import { collectionsService } from "@/services/collectionsService";
-import { materialsService } from "@/services/materialsService";
+import {
+  useConfirmModal,
+} from "@/components/ui/confirm-modal";
 
-import { useAuth } from "@/context/auth/useAuth";
+import { Table } from "@/components/ui/table";
 
-import type { CollectionListItem } from "@/types/collection";
-import type { Material } from "@/types/material";
+import {
+  useToast,
+} from "@/components/ui/toast/toast";
+
+import {
+  useAuth,
+} from "@/context/auth/useAuth";
+
+import {
+  academicTermsService,
+} from "@/services/academicTermsService";
+
+import {
+  collectionsService,
+} from "@/services/collectionsService";
+
+import {
+  materialsService,
+} from "@/services/materialsService";
+
+import type {
+  AcademicTerm,
+} from "@/types/academicTerm";
+
+import type {
+  CollectionListItem,
+} from "@/types/collection";
+
+import type {
+  Material,
+} from "@/types/material";
 
 export default function Collections() {
   const { user, profile } = useAuth();
@@ -31,22 +57,37 @@ export default function Collections() {
   const confirm = useConfirmModal();
   const { toast } = useToast();
 
-  const [collections, setCollections] =
-    useState<CollectionListItem[]>([]);
+  const [
+    collections,
+    setCollections,
+  ] = useState<CollectionListItem[]>(
+    []
+  );
 
-  const [materials, setMaterials] =
-    useState<Material[]>([]);
+  const [
+    materials,
+    setMaterials,
+  ] = useState<Material[]>([]);
 
-  const [loading, setLoading] =
-    useState(true);
+  const [
+    academicTerms,
+    setAcademicTerms,
+  ] = useState<AcademicTerm[]>([]);
+
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
 
   const [
     errorMessage,
     setErrorMessage,
   ] = useState("");
 
-  const [showForm, setShowForm] =
-    useState(false);
+  const [
+    showForm,
+    setShowForm,
+  ] = useState(false);
 
   const [
     editingCollection,
@@ -60,6 +101,12 @@ export default function Collections() {
     deletingId,
     setDeletingId,
   ] = useState<string | null>(null);
+
+  const currentAcademicTerm =
+    academicTerms.find(
+      (academicTerm) =>
+        academicTerm.isCurrent
+    ) ?? null;
 
   // =====================================================
   // CARGAR INFORMACIÓN
@@ -76,9 +123,13 @@ export default function Collections() {
         const [
           collectionsData,
           materialsData,
+          academicTermsData,
         ] = await Promise.all([
           collectionsService.getAll(),
+
           materialsService.getActive(),
+
+          academicTermsService.getAll(),
         ]);
 
         if (!cancelled) {
@@ -88,6 +139,10 @@ export default function Collections() {
 
           setMaterials(
             materialsData
+          );
+
+          setAcademicTerms(
+            academicTermsData
           );
         }
       } catch (error) {
@@ -108,7 +163,7 @@ export default function Collections() {
       }
     }
 
-    loadData();
+    void loadData();
 
     return () => {
       cancelled = true;
@@ -178,10 +233,12 @@ export default function Collections() {
   ) => {
     const confirmed = await confirm({
       title: "Eliminar recolección",
+
       description:
         `Se eliminará el registro de ${collection.materialName} ` +
         `(${formatKilograms(collection.kilograms)}). ` +
         "Esta acción no se puede deshacer.",
+
       confirmText: "Eliminar",
       cancelText: "Cancelar",
       variant: "danger",
@@ -213,7 +270,9 @@ export default function Collections() {
       }
 
       toast.success({
-        title: "Recolección eliminada",
+        title:
+          "Recolección eliminada",
+
         description:
           "El registro fue eliminado correctamente.",
       });
@@ -224,7 +283,9 @@ export default function Collections() {
       );
 
       toast.error({
-        title: "No se pudo eliminar",
+        title:
+          "No se pudo eliminar",
+
         description:
           error instanceof Error
             ? error.message
@@ -242,7 +303,7 @@ export default function Collections() {
   if (loading) {
     return (
       <div className="p-6">
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           Cargando colecciones...
         </p>
       </div>
@@ -256,7 +317,7 @@ export default function Collections() {
   if (errorMessage) {
     return (
       <div className="p-6">
-        <p className="text-sm text-red-600">
+        <p className="text-sm text-red-600 dark:text-red-400">
           {errorMessage}
         </p>
       </div>
@@ -269,12 +330,13 @@ export default function Collections() {
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-white">
             Colecciones
           </h1>
 
-          <p className="mt-1 text-sm text-slate-500">
-            Registro y administración de residuos recolectados.
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            Registro y administración de
+            residuos recolectados.
           </p>
         </div>
 
@@ -297,6 +359,9 @@ export default function Collections() {
             "new-collection"
           }
           materials={materials}
+          academicTerms={
+            academicTerms
+          }
           userId={user.id}
           initialCollection={
             editingCollection
@@ -308,24 +373,35 @@ export default function Collections() {
 
       {/* RESUMEN */}
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="rounded-xl border border-slate-200 bg-white p-5">
-          <p className="text-sm font-medium text-slate-500">
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
             Recolecciones registradas
           </p>
 
-          <p className="mt-1 text-3xl font-bold text-slate-800">
+          <p className="mt-1 text-3xl font-bold text-slate-800 dark:text-white">
             {collections.length}
           </p>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-5">
-          <p className="text-sm font-medium text-slate-500">
+        <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
             Materiales activos
           </p>
 
-          <p className="mt-1 text-3xl font-bold text-slate-800">
+          <p className="mt-1 text-3xl font-bold text-slate-800 dark:text-white">
             {materials.length}
+          </p>
+        </div>
+
+        <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+            Cuatrimestre actual
+          </p>
+
+          <p className="mt-1 text-2xl font-bold text-slate-800 dark:text-white">
+            {currentAcademicTerm?.label ??
+              "Sin definir"}
           </p>
         </div>
       </div>
@@ -334,12 +410,13 @@ export default function Collections() {
 
       <div>
         <div className="mb-3">
-          <h2 className="font-semibold text-slate-800">
+          <h2 className="font-semibold text-slate-800 dark:text-white">
             Historial de recolecciones
           </h2>
 
-          <p className="mt-1 text-sm text-slate-500">
-            Registros almacenados en UTCJ Sustentable.
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            Registros almacenados en UTCJ
+            Sustentable.
           </p>
         </div>
 
@@ -352,6 +429,10 @@ export default function Collections() {
 
               <Table.HeaderCell>
                 Material
+              </Table.HeaderCell>
+
+              <Table.HeaderCell>
+                Cuatrimestre
               </Table.HeaderCell>
 
               <Table.HeaderCell align="right">
@@ -375,8 +456,10 @@ export default function Collections() {
           <Table.Body>
             {collections.length === 0 ? (
               <Table.Empty
-                colSpan={6}
-                icon={<FiInbox size={30} />}
+                colSpan={7}
+                icon={
+                  <FiInbox size={30} />
+                }
                 title="No hay recolecciones"
                 description="Registra la primera recolección para comenzar a generar información."
               />
@@ -400,11 +483,17 @@ export default function Collections() {
                       </Table.Cell>
 
                       <Table.Cell>
-                        <span className="font-medium text-slate-800">
+                        <span className="font-medium text-slate-800 dark:text-white">
                           {
                             collection.materialName
                           }
                         </span>
+                      </Table.Cell>
+
+                      <Table.Cell>
+                        {
+                          collection.academicTermLabel
+                        }
                       </Table.Cell>
 
                       <Table.Cell align="right">
@@ -466,7 +555,7 @@ export default function Collections() {
                                 null
                               }
                               onClick={() =>
-                                handleDelete(
+                                void handleDelete(
                                   collection
                                 )
                               }
@@ -492,7 +581,9 @@ export default function Collections() {
   );
 }
 
-function formatDate(date: string) {
+function formatDate(
+  date: string
+): string {
   const [year, month, day] =
     date.split("-");
 
@@ -501,10 +592,13 @@ function formatDate(date: string) {
 
 function formatKilograms(
   kilograms: number
-) {
+): string {
   return (
-    new Intl.NumberFormat("es-MX", {
-      maximumFractionDigits: 3,
-    }).format(kilograms) + " kg"
+    new Intl.NumberFormat(
+      "es-MX",
+      {
+        maximumFractionDigits: 3,
+      }
+    ).format(kilograms) + " kg"
   );
 }

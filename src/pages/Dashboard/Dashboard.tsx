@@ -3,24 +3,23 @@ import {
   FiBarChart2,
   FiInbox,
   FiPlus,
+  FiUsers,
 } from "react-icons/fi";
 
 import { useNavigate } from "react-router-dom";
 
+import StatCard from "@/components/charts/StatCard";
 import Button from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Table } from "@/components/ui/table";
 import Skeleton from "@/components/ui/skeleton/Skeleton";
-import StatCard from "@/components/charts/StatCard";
+import { Table } from "@/components/ui/table";
 
-import { useAsyncData } from "@/hooks/useAsyncData";
 import { useAuth } from "@/context/auth/useAuth";
-
+import { useAsyncData } from "@/hooks/useAsyncData";
 import { dashboardService } from "@/services/dashboardService";
 
 export default function Dashboard() {
   const navigate = useNavigate();
-
   const { profile } = useAuth();
 
   const {
@@ -73,14 +72,14 @@ export default function Dashboard() {
               No se pudo cargar el resumen del Dashboard.
             </p>
 
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
               Verifica la conexión con Supabase e intenta recargar la página.
             </p>
           </Card.Body>
         </Card>
       )}
 
-      {/* INDICADORES */}
+      {/* INDICADORES GENERALES */}
 
       <section>
         <div className="mb-4">
@@ -107,9 +106,7 @@ export default function Dashboard() {
 
           <StatCard
             label="CO₂ evitado"
-            value={
-              data?.totalCo2 ?? 0
-            }
+            value={data?.totalCo2 ?? 0}
             unit="kg"
             isLoading={isLoading}
             accent="sky"
@@ -129,8 +126,43 @@ export default function Dashboard() {
           <StatCard
             label="Materiales activos"
             value={
-              data?.activeMaterialsCount ??
-              0
+              data?.activeMaterialsCount ?? 0
+            }
+            isLoading={isLoading}
+            accent="sky"
+            decimals={0}
+          />
+        </div>
+      </section>
+
+      {/* PARTICIPACIÓN */}
+
+      <section>
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold text-slate-800 dark:text-white">
+            Participación
+          </h2>
+
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            Participación histórica registrada en el programa.
+          </p>
+        </div>
+
+        <div className="grid gap-5 sm:grid-cols-2">
+          <StatCard
+            label="Capital humano"
+            value={
+              data?.humanCapitalParticipants ?? 0
+            }
+            isLoading={isLoading}
+            accent="emerald"
+            decimals={0}
+          />
+
+          <StatCard
+            label="Capital estadías"
+            value={
+              data?.internshipParticipants ?? 0
             }
             isLoading={isLoading}
             accent="sky"
@@ -159,13 +191,9 @@ export default function Dashboard() {
             <Button
               variant="ghost"
               size="sm"
-              rightIcon={
-                <FiArrowRight />
-              }
+              rightIcon={<FiArrowRight />}
               onClick={() =>
-                navigate(
-                  "/collections"
-                )
+                navigate("/collections")
               }
             >
               Ver todas
@@ -199,9 +227,7 @@ export default function Dashboard() {
                   Array.from({
                     length: 3,
                   }).map((_, index) => (
-                    <Table.Row
-                      key={index}
-                    >
+                    <Table.Row key={index}>
                       <Table.Cell>
                         <Skeleton
                           variant="text"
@@ -231,14 +257,11 @@ export default function Dashboard() {
                       </Table.Cell>
                     </Table.Row>
                   ))
-                ) : recentCollections.length ===
-                  0 ? (
+                ) : recentCollections.length === 0 ? (
                   <Table.Empty
                     colSpan={4}
                     icon={
-                      <FiInbox
-                        size={28}
-                      />
+                      <FiInbox size={28} />
                     }
                     title="No hay recolecciones recientes"
                     description="Registra una nueva recolección para comenzar."
@@ -247,9 +270,7 @@ export default function Dashboard() {
                   recentCollections.map(
                     (collection) => (
                       <Table.Row
-                        key={
-                          collection.id
-                        }
+                        key={collection.id}
                       >
                         <Table.Cell>
                           {formatDate(
@@ -302,9 +323,7 @@ export default function Dashboard() {
               className="w-full"
               leftIcon={<FiPlus />}
               onClick={() =>
-                navigate(
-                  "/collections"
-                )
+                navigate("/collections")
               }
             >
               Registrar recolección
@@ -313,9 +332,18 @@ export default function Dashboard() {
             <Button
               className="w-full"
               variant="secondary"
-              leftIcon={
-                <FiBarChart2 />
+              leftIcon={<FiUsers />}
+              onClick={() =>
+                navigate("/participation")
               }
+            >
+              Gestionar participación
+            </Button>
+
+            <Button
+              className="w-full"
+              variant="secondary"
+              leftIcon={<FiBarChart2 />}
               onClick={() =>
                 navigate("/reports")
               }
@@ -329,7 +357,9 @@ export default function Dashboard() {
               </p>
 
               <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
-                Los indicadores incluyen los datos históricos y las nuevas recolecciones registradas.
+                Los indicadores incluyen los datos históricos,
+                las nuevas recolecciones y los registros de
+                participación.
               </p>
             </div>
           </Card.Body>
