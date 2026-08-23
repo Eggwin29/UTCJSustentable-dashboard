@@ -1,32 +1,36 @@
 import {
-  BarChart,
   Bar,
+  BarChart,
+  CartesianGrid,
+  LabelList,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  LabelList,
 } from "recharts";
 
-import ChartCard from "./ChartCard";
-
-import { useAsyncData } from "@/hooks/useAsyncData";
-import { getCo2PorAño } from "@/services/residuosService";
-
+import ChartCard from "@/components/charts/ChartCard";
 import { CHART_COLORS } from "@/config/reportesConfig";
 
-export default function Co2PorAñoChart() {
-  const {
-    data,
-    isLoading,
-    error,
-  } = useAsyncData(getCo2PorAño);
+import type {
+  AñoTotal,
+} from "@/types/reportes";
 
+interface Co2PorAñoChartProps {
+  data: AñoTotal[];
+  isLoading?: boolean;
+  error?: Error | null;
+}
+
+export default function Co2PorAñoChart({
+  data,
+  isLoading,
+  error,
+}: Co2PorAñoChartProps) {
   return (
     <ChartCard
-      title="CO₂ Evitado por Año"
-      description="Impacto ambiental estimado por año."
+      title="CO₂ evitado por año"
+      description="Impacto ambiental estimado dentro del resultado filtrado."
       isLoading={isLoading}
       error={error}
     >
@@ -36,7 +40,7 @@ export default function Co2PorAñoChart() {
         debounce={150}
       >
         <BarChart
-          data={data ?? []}
+          data={data}
           margin={{
             top: 25,
             right: 10,
@@ -72,18 +76,22 @@ export default function Co2PorAñoChart() {
           <Tooltip
             formatter={(value) => [
               typeof value === "number"
-                ? `${value.toLocaleString("es-MX", {
-                    maximumFractionDigits: 2,
-                  })} kg`
+                ? `${value.toLocaleString(
+                    "es-MX",
+                    {
+                      maximumFractionDigits: 2,
+                    }
+                  )} kg`
                 : `${value ?? 0} kg`,
-
               "CO₂ evitado",
             ]}
           />
 
           <Bar
             dataKey="co2Evitado"
-            fill={CHART_COLORS.categorical[1]}
+            fill={
+              CHART_COLORS.categorical[1]
+            }
             radius={[6, 6, 0, 0]}
           >
             <LabelList
@@ -91,9 +99,12 @@ export default function Co2PorAñoChart() {
               position="top"
               formatter={(value) =>
                 typeof value === "number"
-                  ? value.toLocaleString("es-MX", {
-                      maximumFractionDigits: 2,
-                    })
+                  ? value.toLocaleString(
+                      "es-MX",
+                      {
+                        maximumFractionDigits: 2,
+                      }
+                    )
                   : ""
               }
               fontSize={11}

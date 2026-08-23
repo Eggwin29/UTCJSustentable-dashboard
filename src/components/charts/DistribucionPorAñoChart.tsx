@@ -1,28 +1,72 @@
-import React from "react";
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import type { PieLabelRenderProps } from "recharts";
-import ChartCard from "./ChartCard";
-import { useAsyncData } from "@/hooks/useAsyncData";
-import { getAñoTotals } from "@/services/residuosService";
+import {
+  Cell,
+  Legend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+} from "recharts";
+
+import type {
+  PieLabelRenderProps,
+} from "recharts";
+
+import ChartCard from "@/components/charts/ChartCard";
 import { CHART_COLORS } from "@/config/reportesConfig";
-import type { AñoTotal } from "@/types/reportes";
 
-const DistribucionPorAñoChart: React.FC = () => {
-  const { data, isLoading, error } = useAsyncData(getAñoTotals);
+import type {
+  AñoTotal,
+} from "@/types/reportes";
 
-  const renderLabel = (entry: PieLabelRenderProps) => {
-    const { totalKg, porcentaje } = entry as unknown as AñoTotal;
-    const kgLabel = typeof totalKg === "number" ? totalKg.toLocaleString("es-MX") : "0";
-    const pctLabel = typeof porcentaje === "number" ? `${porcentaje.toFixed(2)}%` : "";
-    return `${kgLabel} (${pctLabel})`;
+interface DistribucionPorAñoChartProps {
+  data: AñoTotal[];
+  isLoading?: boolean;
+  error?: Error | null;
+}
+
+export default function DistribucionPorAñoChart({
+  data,
+  isLoading,
+  error,
+}: DistribucionPorAñoChartProps) {
+  const renderLabel = (
+    entry: PieLabelRenderProps
+  ) => {
+    const {
+      totalKg,
+      porcentaje,
+    } = entry as unknown as AñoTotal;
+
+    const kgLabel =
+      typeof totalKg === "number"
+        ? totalKg.toLocaleString(
+            "es-MX"
+          )
+        : "0";
+
+    const percentageLabel =
+      typeof porcentaje === "number"
+        ? `${porcentaje.toFixed(2)}%`
+        : "";
+
+    return `${kgLabel} (${percentageLabel})`;
   };
 
   return (
-    <ChartCard title="Distribución de Recolección por Año" isLoading={isLoading} error={error}>
-      <ResponsiveContainer width="100%" height={280} debounce={150}>
+    <ChartCard
+      title="Distribución de recolección por año"
+      description="Participación de cada año dentro del resultado filtrado."
+      isLoading={isLoading}
+      error={error}
+    >
+      <ResponsiveContainer
+        width="100%"
+        height={280}
+        debounce={150}
+      >
         <PieChart>
           <Pie
-            data={data ?? []}
+            data={data}
             dataKey="totalKg"
             nameKey="año"
             innerRadius={60}
@@ -30,21 +74,35 @@ const DistribucionPorAñoChart: React.FC = () => {
             paddingAngle={2}
             label={renderLabel}
           >
-            {(data ?? []).map((_, index) => (
-              <Cell key={index} fill={CHART_COLORS.categorical[index % CHART_COLORS.categorical.length]} />
-            ))}
+            {data.map(
+              (record, index) => (
+                <Cell
+                  key={record.año}
+                  fill={
+                    CHART_COLORS.categorical[
+                      index %
+                        CHART_COLORS
+                          .categorical
+                          .length
+                    ]
+                  }
+                />
+              )
+            )}
           </Pie>
+
           <Tooltip
             formatter={(value) => [
-              typeof value === "number" ? `${value.toLocaleString("es-MX")} kg` : `${value ?? 0} kg`,
+              typeof value === "number"
+                ? `${value.toLocaleString("es-MX")} kg`
+                : `${value ?? 0} kg`,
               "Total",
             ]}
           />
+
           <Legend />
         </PieChart>
       </ResponsiveContainer>
     </ChartCard>
   );
-};
-
-export default DistribucionPorAñoChart;
+}

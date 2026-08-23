@@ -11,14 +11,22 @@ import {
 
 import ChartCard from "@/components/charts/ChartCard";
 import { CHART_COLORS } from "@/config/reportesConfig";
-import { useAsyncData } from "@/hooks/useAsyncData";
-import { getEstadiasPorCarrera } from "@/services/internshipReportsService";
 
-export default function EstadiasPorCarreraChart() {
-  const { data, isLoading, error } = useAsyncData(
-    getEstadiasPorCarrera
-  );
+import type {
+  EstadiasPorCarrera,
+} from "@/types/reportes";
 
+interface EstadiasPorCarreraChartProps {
+  data: EstadiasPorCarrera[];
+  isLoading?: boolean;
+  error?: Error | null;
+}
+
+export default function EstadiasPorCarreraChart({
+  data,
+  isLoading,
+  error,
+}: EstadiasPorCarreraChartProps) {
   return (
     <ChartCard
       title="Participación por carrera"
@@ -32,7 +40,7 @@ export default function EstadiasPorCarreraChart() {
         debounce={150}
       >
         <BarChart
-          data={data ?? []}
+          data={data}
           layout="vertical"
           margin={{
             top: 10,
@@ -73,7 +81,9 @@ export default function EstadiasPorCarreraChart() {
           <Tooltip
             formatter={(value) => [
               typeof value === "number"
-                ? value.toLocaleString("es-MX")
+                ? value.toLocaleString(
+                    "es-MX"
+                  )
                 : value ?? 0,
               "Participantes",
             ]}
@@ -93,7 +103,9 @@ export default function EstadiasPorCarreraChart() {
               position="right"
               formatter={(value) =>
                 typeof value === "number"
-                  ? value.toLocaleString("es-MX")
+                  ? value.toLocaleString(
+                      "es-MX"
+                    )
                   : ""
               }
               fontSize={11}

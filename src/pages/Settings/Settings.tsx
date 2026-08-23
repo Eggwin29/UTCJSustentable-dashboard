@@ -1,14 +1,18 @@
-import { useState } from "react";
-
 import {
   FiBookOpen,
   FiCalendar,
   FiPackage,
 } from "react-icons/fi";
 
+import {
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
+
 import AcademicProgramsSettings from "@/components/settings/AcademicProgramsSettings";
 import AcademicTermsSettings from "@/components/settings/AcademicTermsSettings";
 import MaterialsSettings from "@/components/settings/MaterialsSettings";
+
 import { cn } from "@/utils/cn";
 
 type SettingsTab =
@@ -19,24 +23,51 @@ type SettingsTab =
 const tabs = [
   {
     id: "materials" as const,
+    hash: "configuracion-materiales",
     label: "Materiales",
     icon: FiPackage,
   },
   {
     id: "academic-programs" as const,
+    hash: "configuracion-carreras",
     label: "Carreras",
     icon: FiBookOpen,
   },
   {
     id: "academic-terms" as const,
+    hash: "configuracion-cuatrimestres",
     label: "Cuatrimestres",
     icon: FiCalendar,
   },
 ];
 
 export default function Settings() {
-  const [activeTab, setActiveTab] =
-    useState<SettingsTab>("materials");
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const activeTab = getSettingsTab(
+    location.hash
+  );
+
+  const activeTabConfig =
+    tabs.find(
+      (tab) => tab.id === activeTab
+    ) ?? tabs[0];
+
+  const selectTab = (
+    tab: (typeof tabs)[number]
+  ) => {
+    navigate(
+      {
+        pathname: location.pathname,
+        search: location.search,
+        hash: `#${tab.hash}`,
+      },
+      {
+        replace: true,
+      }
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -68,10 +99,12 @@ export default function Settings() {
               type="button"
               role="tab"
               aria-selected={selected}
-              aria-controls={`settings-panel-${tab.id}`}
-              tabIndex={selected ? 0 : -1}
+              aria-controls={tab.hash}
+              tabIndex={
+                selected ? 0 : -1
+              }
               onClick={() =>
-                setActiveTab(tab.id)
+                selectTab(tab)
               }
               className={cn(
                 "inline-flex min-w-max items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors",
@@ -89,11 +122,14 @@ export default function Settings() {
       </div>
 
       <section
-        id={`settings-panel-${activeTab}`}
+        id={activeTabConfig.hash}
         role="tabpanel"
         aria-labelledby={`settings-tab-${activeTab}`}
+        tabIndex={-1}
+        className="scroll-mt-6 focus:outline-none"
       >
-        {activeTab === "materials" && (
+        {activeTab ===
+          "materials" && (
           <MaterialsSettings />
         )}
 
@@ -109,4 +145,27 @@ export default function Settings() {
       </section>
     </div>
   );
+}
+
+function getSettingsTab(
+  hash: string
+): SettingsTab {
+  const normalizedHash =
+    hash.replace(/^#/, "");
+
+  if (
+    normalizedHash ===
+    "configuracion-carreras"
+  ) {
+    return "academic-programs";
+  }
+
+  if (
+    normalizedHash ===
+    "configuracion-cuatrimestres"
+  ) {
+    return "academic-terms";
+  }
+
+  return "materials";
 }

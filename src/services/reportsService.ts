@@ -8,6 +8,11 @@ import type {
   AcademicLevel,
 } from "@/types/internshipParticipation";
 
+import {
+  DEFAULT_REPORT_FILTERS,
+  HISTORICAL_WITHOUT_TERM_ID,
+} from "@/types/reportes";
+
 import type {
   AñoTotal,
   EstadiasPorCarrera,
@@ -16,20 +21,47 @@ import type {
   EstadiasTotales,
   MaterialTotal,
   PersonalRecord,
+  ReportAcademicTermOption,
+  ReportFilterOptions,
+  ReportFilters,
+  ReportSelection,
   ResiduoRecord,
 } from "@/types/reportes";
 
-interface ResiduoConFactor
+interface ResiduoReportRecord
   extends ResiduoRecord {
+  academicTermId: string | null;
+  academicTermYear: number | null;
+
+  academicTermCode:
+    | AcademicTermCode
+    | null;
+
   co2Factor: number;
 }
 
+interface PersonalReportRecord {
+  academicTermId: string;
+  year: number;
+  term: AcademicTermCode;
+  tmMartes: number;
+  tvJueves: number;
+}
+
 interface EstadiaReportRecord {
+  academicTermId: string;
+  academicProgramId: string;
   year: number;
   term: AcademicTermCode;
   carrera: string;
   nivel: AcademicLevel;
   participantes: number;
+}
+
+interface ReportesSourceData {
+  residuos: ResiduoReportRecord[];
+  personal: PersonalReportRecord[];
+  estadias: EstadiaReportRecord[];
 }
 
 export interface ReportesData {
@@ -63,12 +95,11 @@ export interface ReportesData {
   estadiasPorNivel:
     EstadiasPorNivel[];
 
-  estadiasTotales:
-    EstadiasTotales;
+  estadiasTotales: EstadiasTotales;
 }
 
-let reportesPromise:
-  | Promise<ReportesData>
+let reportesSourcePromise:
+  | Promise<ReportesSourceData>
   | null = null;
 
 function formatTerm(
@@ -77,8 +108,74 @@ function formatTerm(
   return term.replace("-", " - ");
 }
 
+function getTermOrder(
+  term: unknown
+): number {
+  if (term === "E-A") {
+    return 1;
+  }
+
+  if (term === "M-A") {
+    return 2;
+  }
+
+  if (term === "S-D") {
+    return 3;
+  }
+
+  return 0;
+}
+
+function matchesSelection<
+  T extends string | number,
+>(
+  value: T,
+  selection: ReportSelection<T>
+): boolean {
+  if (
+    selection.values.length === 0
+  ) {
+    return true;
+  }
+
+  const isSelected =
+    selection.values.includes(value);
+
+  return selection.mode === "include"
+    ? isSelected
+    : !isSelected;
+}
+
+function matchesPeriod(
+  year: number,
+  academicTermId: string | null,
+  filters: ReportFilters
+): boolean {
+  if (
+    filters.periodMode === "all"
+  ) {
+    return true;
+  }
+
+  if (
+    filters.periodMode === "year"
+  ) {
+    return matchesSelection(
+      year,
+      filters.years
+    );
+  }
+
+  return matchesSelection(
+    academicTermId ??
+      HISTORICAL_WITHOUT_TERM_ID,
+
+    filters.academicTermIds
+  );
+}
+
 function buildMaterialTotals(
-  records: ResiduoConFactor[]
+  records: ResiduoReportRecord[]
 ): MaterialTotal[] {
   const materialMap = new Map<
     string,
@@ -129,7 +226,7 @@ function buildMaterialTotals(
 }
 
 function buildAñoTotals(
-  records: ResiduoConFactor[],
+  records: ResiduoReportRecord[],
   totalHistorico: number
 ): AñoTotal[] {
   const yearMap = new Map<
@@ -172,10 +269,9 @@ function buildAñoTotals(
 
       porcentaje:
         totalHistorico > 0
-          ? (
-              values.totalKg /
-              totalHistorico
-            ) * 100
+          ? (values.totalKg /
+              totalHistorico) *
+            100
           : 0,
     }))
     .sort(
@@ -184,7 +280,7 @@ function buildAñoTotals(
 }
 
 function buildResiduosPorAño(
-  records: ResiduoConFactor[],
+  records: ResiduoReportRecord[],
   years: number[]
 ): Record<number, MaterialTotal[]> {
   const result: Record<
@@ -220,11 +316,10 @@ function buildEstadiasPorCarrera(
     totals.set(
       record.carrera,
 
-      (
-        totals.get(
-          record.carrera
-        ) ?? 0
-      ) + record.participantes
+      (totals.get(
+        record.carrera
+      ) ?? 0) +
+        record.participantes
     );
   }
 
@@ -260,11 +355,8 @@ function buildEstadiasPorNivel(
     totals.set(
       record.nivel,
 
-      (
-        totals.get(
-          record.nivel
-        ) ?? 0
-      ) + record.participantes
+      (totals.get(record.nivel) ??
+        0) + record.participantes
     );
   }
 
@@ -310,10 +402,7 @@ function buildEstadiasPorCuatrimestre(
     current.participantes +=
       record.participantes;
 
-    totals.set(
-      key,
-      current
-    );
+    totals.set(key, current);
   }
 
   return Array.from(
@@ -340,197 +429,250 @@ function buildEstadiasPorCuatrimestre(
     }));
 }
 
-function getTermOrder(
-  term: unknown
-): number {
-  if (term === "E-A") {
-    return 1;
+function addAcademicTermOption(
+  options: Map<
+    string,
+    ReportAcademicTermOption
+  >,
+
+  id: string | null,
+  year: number | null,
+
+  term:
+    | AcademicTermCode
+    | null
+): void {
+  if (
+    !id ||
+    year === null ||
+    !term
+  ) {
+    return;
   }
 
-  if (term === "M-A") {
-    return 2;
-  }
+  options.set(id, {
+    id,
+    year,
+    term,
 
-  if (term === "S-D") {
-    return 3;
-  }
-
-  return 0;
+    label:
+      `${formatTerm(term)} ${year}`,
+  });
 }
 
-async function fetchReportesData():
-  Promise<ReportesData> {
-  const [
-    residuosResult,
-    personalResult,
-    estadiasResult,
-  ] = await Promise.all([
-    supabase
-      .from("waste_collections")
-      .select(`
-        year,
-        kilograms,
-        co2_factor_applied,
-        materials (
-          name
-        )
-      `)
-      .order(
-        "year",
-        {
-          ascending: true,
-        }
+function buildFilterOptions(
+  source: ReportesSourceData
+): ReportFilterOptions {
+  const years =
+    new Set<number>();
+
+  const academicTerms = new Map<
+    string,
+    ReportAcademicTermOption
+  >();
+
+  const materials =
+    new Set<string>();
+
+  const academicPrograms = new Map<
+    string,
+    string
+  >();
+
+  const academicLevels = new Set<
+    AcademicLevel
+  >();
+
+  for (
+    const record
+    of source.residuos
+  ) {
+    years.add(record.año);
+
+    materials.add(
+      record.tipoResiduo
+    );
+
+    addAcademicTermOption(
+      academicTerms,
+      record.academicTermId,
+      record.academicTermYear,
+      record.academicTermCode
+    );
+  }
+
+  for (
+    const record
+    of source.personal
+  ) {
+    years.add(record.year);
+
+    addAcademicTermOption(
+      academicTerms,
+      record.academicTermId,
+      record.year,
+      record.term
+    );
+  }
+
+  for (
+    const record
+    of source.estadias
+  ) {
+    years.add(record.year);
+
+    addAcademicTermOption(
+      academicTerms,
+      record.academicTermId,
+      record.year,
+      record.term
+    );
+
+    academicPrograms.set(
+      record.academicProgramId,
+      record.carrera
+    );
+
+    academicLevels.add(
+      record.nivel
+    );
+  }
+
+  const levelOrder:
+    AcademicLevel[] = [
+      "TSU",
+      "Licenciatura",
+      "Sin especificar",
+    ];
+
+  return {
+    years:
+      Array.from(years).sort(
+        (a, b) => b - a
       ),
 
-    supabase
-      .from("human_capital")
-      .select(`
-        year,
-        term,
-        tm_tuesday,
-        tv_thursday
-      `)
-      .order(
-        "year",
-        {
-          ascending: true,
+    academicTerms:
+      Array.from(
+        academicTerms.values()
+      ).sort((a, b) => {
+        if (a.year !== b.year) {
+          return b.year - a.year;
         }
-      )
-      .order(
-        "term",
-        {
-          ascending: true,
-        }
+
+        return (
+          getTermOrder(b.term) -
+          getTermOrder(a.term)
+        );
+      }),
+
+    hasHistoricalWithoutAcademicTerm:
+      source.residuos.some(
+        (record) =>
+          record.academicTermId ===
+          null
       ),
 
-    supabase
-      .from(
-        "internship_participation"
+    materials:
+      Array.from(
+        materials
+      ).sort((a, b) =>
+        a.localeCompare(b, "es")
+      ),
+
+    academicPrograms:
+      Array.from(
+        academicPrograms.entries()
       )
-      .select(`
-        participant_count,
-        academic_level,
-        academic_terms (
-          year,
-          term
+        .map(([id, name]) => ({
+          id,
+          name,
+        }))
+        .sort((a, b) =>
+          a.name.localeCompare(
+            b.name,
+            "es"
+          )
         ),
-        academic_programs (
-          name
+
+    academicLevels:
+      levelOrder.filter(
+        (level) =>
+          academicLevels.has(level)
+      ),
+  };
+}
+
+function aggregateReportesData(
+  source: ReportesSourceData,
+  filters: ReportFilters
+): ReportesData {
+  const residuos =
+    source.residuos.filter(
+      (record) =>
+        matchesPeriod(
+          record.año,
+          record.academicTermId,
+          filters
+        ) &&
+        matchesSelection(
+          record.tipoResiduo,
+          filters.materials
         )
-      `),
-  ]);
+    );
 
-  if (residuosResult.error) {
-    throw residuosResult.error;
-  }
+  const personal =
+    source.personal.filter(
+      (record) =>
+        matchesPeriod(
+          record.year,
+          record.academicTermId,
+          filters
+        )
+    );
 
-  if (personalResult.error) {
-    throw personalResult.error;
-  }
-
-  if (estadiasResult.error) {
-    throw estadiasResult.error;
-  }
-
-  const residuos:
-    ResiduoConFactor[] =
-      residuosResult.data.map(
-        (record) => {
-          if (!record.materials) {
-            throw new Error(
-              "Se encontró una recolección sin material relacionado."
-            );
-          }
-
-          return {
-            año:
-              record.year,
-
-            tipoResiduo:
-              record.materials.name,
-
-            kilogramos:
-              Number(
-                record.kilograms
-              ),
-
-            co2Factor:
-              Number(
-                record.co2_factor_applied
-              ),
-          };
-        }
-      );
+  const estadias =
+    source.estadias.filter(
+      (record) =>
+        matchesPeriod(
+          record.year,
+          record.academicTermId,
+          filters
+        ) &&
+        matchesSelection(
+          record.academicProgramId,
+          filters.academicProgramIds
+        ) &&
+        matchesSelection(
+          record.nivel,
+          filters.academicLevels
+        )
+    );
 
   const personalPorCuatrimestre:
     PersonalRecord[] =
-      personalResult.data.map(
-        (record) => ({
-          cuatrimestre:
-            `${formatTerm(
-              record.term
-            )} ${record.year}`,
+      personal.map((record) => ({
+        cuatrimestre:
+          `${formatTerm(
+            record.term
+          )} ${record.year}`,
 
-          tmMartes:
-            record.tm_tuesday,
+        tmMartes:
+          filters.personalTurn ===
+          "tv"
+            ? 0
+            : record.tmMartes,
 
-          tvJueves:
-            record.tv_thursday,
-        })
-      );
-
-  const estadias:
-    EstadiaReportRecord[] =
-      estadiasResult.data.map(
-        (record) => {
-          if (
-            !record.academic_terms
-          ) {
-            throw new Error(
-              "Se encontró una participación de estadías sin cuatrimestre relacionado."
-            );
-          }
-
-          if (
-            !record.academic_programs
-          ) {
-            throw new Error(
-              "Se encontró una participación de estadías sin carrera relacionada."
-            );
-          }
-
-          return {
-            year:
-              record
-                .academic_terms
-                .year,
-
-            term:
-              record
-                .academic_terms
-                .term,
-
-            carrera:
-              record
-                .academic_programs
-                .name,
-
-            nivel:
-              record
-                .academic_level,
-
-            participantes:
-              record
-                .participant_count,
-          };
-        }
-      );
+        tvJueves:
+          filters.personalTurn ===
+          "tm"
+            ? 0
+            : record.tvJueves,
+      }));
 
   const totalHistorico =
     residuos.reduce(
       (sum, record) =>
-        sum +
-        record.kilogramos,
+        sum + record.kilogramos,
       0
     );
 
@@ -544,9 +686,7 @@ async function fetchReportesData():
     );
 
   const materialTotals =
-    buildMaterialTotals(
-      residuos
-    );
+    buildMaterialTotals(residuos);
 
   const añoTotals =
     buildAñoTotals(
@@ -619,7 +759,6 @@ async function fetchReportesData():
       ),
 
     availableYears,
-
     personalPorCuatrimestre,
     personalTotales,
 
@@ -642,22 +781,239 @@ async function fetchReportesData():
   };
 }
 
-export function getReportesData():
-  Promise<ReportesData> {
-  if (!reportesPromise) {
-    reportesPromise =
-      fetchReportesData().catch(
+async function fetchReportesSourceData():
+  Promise<ReportesSourceData> {
+  const [
+    residuosResult,
+    personalResult,
+    estadiasResult,
+  ] = await Promise.all([
+    supabase
+      .from(
+        "waste_collections"
+      )
+      .select(`
+        year,
+        academic_term_id,
+        kilograms,
+        co2_factor_applied,
+        academic_terms (
+          year,
+          term
+        ),
+        materials (
+          name
+        )
+      `)
+      .order("year", {
+        ascending: true,
+      }),
+
+    supabase
+      .from("human_capital")
+      .select(`
+        academic_term_id,
+        year,
+        term,
+        tm_tuesday,
+        tv_thursday
+      `)
+      .order("year", {
+        ascending: true,
+      })
+      .order("term", {
+        ascending: true,
+      }),
+
+    supabase
+      .from(
+        "internship_participation"
+      )
+      .select(`
+        academic_term_id,
+        academic_program_id,
+        participant_count,
+        academic_level,
+        academic_terms (
+          year,
+          term
+        ),
+        academic_programs (
+          name
+        )
+      `),
+  ]);
+
+  if (residuosResult.error) {
+    throw residuosResult.error;
+  }
+
+  if (personalResult.error) {
+    throw personalResult.error;
+  }
+
+  if (estadiasResult.error) {
+    throw estadiasResult.error;
+  }
+
+  const residuos:
+    ResiduoReportRecord[] =
+      residuosResult.data.map(
+        (record) => {
+          if (!record.materials) {
+            throw new Error(
+              "Se encontró una recolección sin material relacionado."
+            );
+          }
+
+          return {
+            año: record.year,
+
+            academicTermId:
+              record
+                .academic_term_id,
+
+            academicTermYear:
+              record.academic_terms
+                ?.year ?? null,
+
+            academicTermCode:
+              record.academic_terms
+                ?.term ?? null,
+
+            tipoResiduo:
+              record.materials.name,
+
+            kilogramos:
+              Number(
+                record.kilograms
+              ),
+
+            co2Factor:
+              Number(
+                record
+                  .co2_factor_applied
+              ),
+          };
+        }
+      );
+
+  const personal:
+    PersonalReportRecord[] =
+      personalResult.data.map(
+        (record) => ({
+          academicTermId:
+            record.academic_term_id,
+
+          year: record.year,
+          term: record.term,
+
+          tmMartes:
+            record.tm_tuesday,
+
+          tvJueves:
+            record.tv_thursday,
+        })
+      );
+
+  const estadias:
+    EstadiaReportRecord[] =
+      estadiasResult.data.map(
+        (record) => {
+          if (
+            !record.academic_terms
+          ) {
+            throw new Error(
+              "Se encontró una participación de estadías sin cuatrimestre relacionado."
+            );
+          }
+
+          if (
+            !record.academic_programs
+          ) {
+            throw new Error(
+              "Se encontró una participación de estadías sin carrera relacionada."
+            );
+          }
+
+          return {
+            academicTermId:
+              record
+                .academic_term_id,
+
+            academicProgramId:
+              record
+                .academic_program_id,
+
+            year:
+              record
+                .academic_terms.year,
+
+            term:
+              record
+                .academic_terms.term,
+
+            carrera:
+              record
+                .academic_programs
+                .name,
+
+            nivel:
+              record
+                .academic_level,
+
+            participantes:
+              record
+                .participant_count,
+          };
+        }
+      );
+
+  return {
+    residuos,
+    personal,
+    estadias,
+  };
+}
+
+function getReportesSourceData():
+  Promise<ReportesSourceData> {
+  if (!reportesSourcePromise) {
+    reportesSourcePromise =
+      fetchReportesSourceData().catch(
         (error) => {
-          reportesPromise = null;
+          reportesSourcePromise = null;
+
           throw error;
         }
       );
   }
 
-  return reportesPromise;
+  return reportesSourcePromise;
+}
+
+export async function getReportesData(
+  filters: ReportFilters =
+    DEFAULT_REPORT_FILTERS
+): Promise<ReportesData> {
+  const source =
+    await getReportesSourceData();
+
+  return aggregateReportesData(
+    source,
+    filters
+  );
+}
+
+export async function getReportFilterOptions():
+  Promise<ReportFilterOptions> {
+  const source =
+    await getReportesSourceData();
+
+  return buildFilterOptions(source);
 }
 
 export function invalidateReportesCache():
   void {
-  reportesPromise = null;
+  reportesSourcePromise = null;
 }

@@ -1,9 +1,12 @@
-import { useState } from "react";
-
 import {
   FiBriefcase,
   FiUsers,
 } from "react-icons/fi";
+
+import {
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 
 import HumanCapitalSection from "@/pages/Participation/HumanCapitalSection";
 import InternshipParticipationSection from "@/pages/Participation/InternshipParticipationSection";
@@ -17,21 +20,45 @@ type ParticipationTab =
 const tabs = [
   {
     id: "human-capital" as const,
+    hash: "capital-humano",
     label: "Capital humano",
     icon: FiUsers,
   },
   {
     id: "internships" as const,
+    hash: "capital-estadias",
     label: "Capital estadías",
     icon: FiBriefcase,
   },
 ];
 
 export default function Participation() {
-  const [activeTab, setActiveTab] =
-    useState<ParticipationTab>(
-      "human-capital"
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const activeTab = getParticipationTab(
+    location.hash
+  );
+
+  const activeTabConfig =
+    tabs.find(
+      (tab) => tab.id === activeTab
+    ) ?? tabs[0];
+
+  const selectTab = (
+    tab: (typeof tabs)[number]
+  ) => {
+    navigate(
+      {
+        pathname: location.pathname,
+        search: location.search,
+        hash: `#${tab.hash}`,
+      },
+      {
+        replace: true,
+      }
     );
+  };
 
   return (
     <div className="space-y-6">
@@ -65,16 +92,15 @@ export default function Participation() {
               type="button"
               role="tab"
               aria-selected={selected}
-              aria-controls={`participation-panel-${tab.id}`}
+              aria-controls={tab.hash}
               tabIndex={
                 selected ? 0 : -1
               }
               onClick={() =>
-                setActiveTab(tab.id)
+                selectTab(tab)
               }
               className={cn(
                 "inline-flex min-w-max items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors",
-
                 selected
                   ? "bg-emerald-600 text-white shadow-sm"
                   : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
@@ -89,9 +115,11 @@ export default function Participation() {
       </div>
 
       <section
-        id={`participation-panel-${activeTab}`}
+        id={activeTabConfig.hash}
         role="tabpanel"
         aria-labelledby={`participation-tab-${activeTab}`}
+        tabIndex={-1}
+        className="scroll-mt-6 focus:outline-none"
       >
         {activeTab ===
         "human-capital" ? (
@@ -102,4 +130,16 @@ export default function Participation() {
       </section>
     </div>
   );
+}
+
+function getParticipationTab(
+  hash: string
+): ParticipationTab {
+  const normalizedHash =
+    hash.replace(/^#/, "");
+
+  return normalizedHash ===
+    "capital-estadias"
+    ? "internships"
+    : "human-capital";
 }

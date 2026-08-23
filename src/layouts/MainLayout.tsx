@@ -1,13 +1,21 @@
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
+
 import { TopBar } from "@/components/layout/TopBar";
 import { Sidebar } from "@/components/layout/sidebar/Sidebar";
 
+import { useScrollToHash } from "@/hooks/useScrollToHash";
+
 export default function MainLayout() {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  useScrollToHash();
+
+  const [sidebarOpen, setSidebarOpen] =
+    useState(true);
 
   const handleToggleSidebar = () => {
-    setSidebarOpen((prev) => !prev);
+    setSidebarOpen(
+      (previous) => !previous
+    );
   };
 
   const handleCloseSidebar = () => {
@@ -15,17 +23,24 @@ export default function MainLayout() {
   };
 
   return (
-    <div className="h-screen bg-slate-100 flex flex-col overflow-hidden">
-      {/* TopBar fija en la parte superior */}
-      <TopBar onToggleSidebar={handleToggleSidebar} />
+    <div className="flex h-screen flex-col overflow-hidden bg-slate-100">
+      <TopBar
+        onToggleSidebar={
+          handleToggleSidebar
+        }
+      />
 
-      {/* Área flexible debajo de la TopBar */}
-      <div className="flex flex-1 overflow-hidden relative">
-        <Sidebar isOpen={sidebarOpen} onClose={handleCloseSidebar} />
+      <div className="relative flex flex-1 overflow-hidden">
+        <Sidebar
+          isOpen={sidebarOpen}
+          onClose={handleCloseSidebar}
+        />
 
-        {/* Contenido principal con scroll independiente */}
-        <main className="flex-1 p-6 md:p-8 overflow-y-auto w-full transition-all duration-300 ease-in-out">
-          <div className="max-w-[1600px] mx-auto">
+        <main
+          data-main-scroll-container
+          className="w-full flex-1 overflow-y-auto p-6 transition-all duration-300 ease-in-out md:p-8"
+        >
+          <div className="mx-auto max-w-[1600px]">
             <Outlet />
           </div>
         </main>

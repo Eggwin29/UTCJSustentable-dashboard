@@ -9,14 +9,22 @@ import {
 
 import ChartCard from "@/components/charts/ChartCard";
 import { CHART_COLORS } from "@/config/reportesConfig";
-import { useAsyncData } from "@/hooks/useAsyncData";
-import { getEstadiasPorNivel } from "@/services/internshipReportsService";
 
-export default function EstadiasPorNivelChart() {
-  const { data, isLoading, error } = useAsyncData(
-    getEstadiasPorNivel
-  );
+import type {
+  EstadiasPorNivel,
+} from "@/types/reportes";
 
+interface EstadiasPorNivelChartProps {
+  data: EstadiasPorNivel[];
+  isLoading?: boolean;
+  error?: Error | null;
+}
+
+export default function EstadiasPorNivelChart({
+  data,
+  isLoading,
+  error,
+}: EstadiasPorNivelChartProps) {
   return (
     <ChartCard
       title="Participación por nivel"
@@ -31,7 +39,7 @@ export default function EstadiasPorNivelChart() {
       >
         <PieChart>
           <Pie
-            data={data ?? []}
+            data={data}
             dataKey="participantes"
             nameKey="nivel"
             innerRadius={60}
@@ -39,26 +47,35 @@ export default function EstadiasPorNivelChart() {
             paddingAngle={2}
             label={({ value }) =>
               typeof value === "number"
-                ? value.toLocaleString("es-MX")
+                ? value.toLocaleString(
+                    "es-MX"
+                  )
                 : ""
             }
           >
-            {(data ?? []).map((record, index) => (
-              <Cell
-                key={record.nivel}
-                fill={
-                  CHART_COLORS.categorical[
-                    index % CHART_COLORS.categorical.length
-                  ]
-                }
-              />
-            ))}
+            {data.map(
+              (record, index) => (
+                <Cell
+                  key={record.nivel}
+                  fill={
+                    CHART_COLORS.categorical[
+                      index %
+                        CHART_COLORS
+                          .categorical
+                          .length
+                    ]
+                  }
+                />
+              )
+            )}
           </Pie>
 
           <Tooltip
             formatter={(value) => [
               typeof value === "number"
-                ? value.toLocaleString("es-MX")
+                ? value.toLocaleString(
+                    "es-MX"
+                  )
                 : value ?? 0,
               "Participantes",
             ]}

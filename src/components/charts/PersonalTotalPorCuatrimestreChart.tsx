@@ -1,44 +1,103 @@
-import React from "react";
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import type { PieLabelRenderProps } from "recharts";
-import ChartCard from "./ChartCard";
-import { useAsyncData } from "@/hooks/useAsyncData";
-import { getPersonalPorCuatrimestre } from "@/services/personalService";
+import {
+  Cell,
+  Legend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+} from "recharts";
+
+import type {
+  PieLabelRenderProps,
+} from "recharts";
+
+import ChartCard from "@/components/charts/ChartCard";
 import { CHART_COLORS } from "@/config/reportesConfig";
+
+import type {
+  PersonalRecord,
+} from "@/types/reportes";
 
 interface CuatrimestreTotal {
   cuatrimestre: string;
   total: number;
 }
 
-async function fetchTotalsPorCuatrimestre(): Promise<CuatrimestreTotal[]> {
-  const data = await getPersonalPorCuatrimestre();
-  return data.map((r) => ({ cuatrimestre: r.cuatrimestre, total: r.tmMartes + r.tvJueves }));
+interface PersonalTotalPorCuatrimestreChartProps {
+  data: PersonalRecord[];
+  isLoading?: boolean;
+  error?: Error | null;
 }
 
-const renderLabel = (entry: PieLabelRenderProps) => {
-  const { total } = entry as unknown as CuatrimestreTotal;
-  return total;
-};
+function renderLabel(
+  entry: PieLabelRenderProps
+) {
+  const { total } =
+    entry as unknown as CuatrimestreTotal;
 
-const PersonalTotalPorCuatrimestreChart: React.FC = () => {
-  const { data, isLoading, error } = useAsyncData(fetchTotalsPorCuatrimestre);
+  return total;
+}
+
+export default function PersonalTotalPorCuatrimestreChart({
+  data,
+  isLoading,
+  error,
+}: PersonalTotalPorCuatrimestreChartProps) {
+  const chartData: CuatrimestreTotal[] =
+    data.map((record) => ({
+      cuatrimestre: record.cuatrimestre,
+      total:
+        record.tmMartes +
+        record.tvJueves,
+    }));
 
   return (
-    <ChartCard title="Personal Total por Cuatrimestre" isLoading={isLoading} error={error}>
-      <ResponsiveContainer width="100%" height={260} debounce={150}>
+    <ChartCard
+      title="Personal total por cuatrimestre"
+      description="Participación acumulada por periodo académico."
+      isLoading={isLoading}
+      error={error}
+    >
+      <ResponsiveContainer
+        width="100%"
+        height={260}
+        debounce={150}
+      >
         <PieChart>
-          <Pie data={data ?? []} dataKey="total" nameKey="cuatrimestre" innerRadius={55} outerRadius={85} label={renderLabel}>
-            {(data ?? []).map((_, index) => (
-              <Cell key={index} fill={CHART_COLORS.categorical[index % CHART_COLORS.categorical.length]} />
-            ))}
+          <Pie
+            data={chartData}
+            dataKey="total"
+            nameKey="cuatrimestre"
+            innerRadius={55}
+            outerRadius={85}
+            label={renderLabel}
+          >
+            {chartData.map(
+              (record, index) => (
+                <Cell
+                  key={record.cuatrimestre}
+                  fill={
+                    CHART_COLORS.categorical[
+                      index %
+                        CHART_COLORS
+                          .categorical
+                          .length
+                    ]
+                  }
+                />
+              )
+            )}
           </Pie>
+
           <Tooltip />
-          <Legend wrapperStyle={{ fontSize: 11 }} />
+
+          <Legend
+            wrapperStyle={{
+              fontSize: 11,
+            }}
+          />
         </PieChart>
       </ResponsiveContainer>
     </ChartCard>
   );
-};
-
-export default PersonalTotalPorCuatrimestreChart;
+}

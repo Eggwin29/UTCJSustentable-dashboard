@@ -11,14 +11,22 @@ import {
 
 import ChartCard from "@/components/charts/ChartCard";
 import { CHART_COLORS } from "@/config/reportesConfig";
-import { useAsyncData } from "@/hooks/useAsyncData";
-import { getEstadiasPorCuatrimestre } from "@/services/internshipReportsService";
 
-export default function EstadiasPorCuatrimestreChart() {
-  const { data, isLoading, error } = useAsyncData(
-    getEstadiasPorCuatrimestre
-  );
+import type {
+  EstadiasPorCuatrimestre,
+} from "@/types/reportes";
 
+interface EstadiasPorCuatrimestreChartProps {
+  data: EstadiasPorCuatrimestre[];
+  isLoading?: boolean;
+  error?: Error | null;
+}
+
+export default function EstadiasPorCuatrimestreChart({
+  data,
+  isLoading,
+  error,
+}: EstadiasPorCuatrimestreChartProps) {
   return (
     <ChartCard
       title="Participación por cuatrimestre"
@@ -32,7 +40,7 @@ export default function EstadiasPorCuatrimestreChart() {
         debounce={150}
       >
         <BarChart
-          data={data ?? []}
+          data={data}
           margin={{
             top: 25,
             right: 10,
@@ -69,7 +77,9 @@ export default function EstadiasPorCuatrimestreChart() {
           <Tooltip
             formatter={(value) => [
               typeof value === "number"
-                ? value.toLocaleString("es-MX")
+                ? value.toLocaleString(
+                    "es-MX"
+                  )
                 : value ?? 0,
               "Participantes",
             ]}
@@ -81,7 +91,9 @@ export default function EstadiasPorCuatrimestreChart() {
 
           <Bar
             dataKey="participantes"
-            fill={CHART_COLORS.categorical[1]}
+            fill={
+              CHART_COLORS.categorical[1]
+            }
             radius={[6, 6, 0, 0]}
           >
             <LabelList
@@ -89,7 +101,9 @@ export default function EstadiasPorCuatrimestreChart() {
               position="top"
               formatter={(value) =>
                 typeof value === "number"
-                  ? value.toLocaleString("es-MX")
+                  ? value.toLocaleString(
+                      "es-MX"
+                    )
                   : ""
               }
               fontSize={11}

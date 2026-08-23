@@ -1,50 +1,120 @@
-import React from "react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import ChartCard from "./ChartCard";
-import { useAsyncData } from "@/hooks/useAsyncData";
-import { getResiduosPorAño, getAvailableYears} from "@/services/residuosService";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+
+import ChartCard from "@/components/charts/ChartCard";
 import { CHART_COLORS } from "@/config/reportesConfig";
 
+import type {
+  MaterialTotal,
+} from "@/types/reportes";
 
+interface ResiduosPorAñoChartProps {
+  years: number[];
 
-async function fetchAllYears() {
-  const years =
-    await getAvailableYears();
+  dataByYear: Record<
+    number,
+    MaterialTotal[]
+  >;
 
-  const results = await Promise.all(
-    years.map((year) =>
-      getResiduosPorAño(year)
-    )
-  );
-
-  return years.map((year, index) => ({
-    año: year,
-    data: results[index],
-  }));
+  isLoading?: boolean;
+  error?: Error | null;
 }
 
-const ResiduosPorAñoChart: React.FC = () => {
-  const { data, isLoading, error } = useAsyncData(fetchAllYears);
-
+export default function ResiduosPorAñoChart({
+  years,
+  dataByYear,
+  isLoading,
+  error,
+}: ResiduosPorAñoChartProps) {
   return (
-    <ChartCard title="Recolección por año y material" isLoading={isLoading} error={error}>
-      <div className="grid grid-cols-2 gap-4">
-        {(data ?? []).map(({ año, data: yearData }) => (
-          <div key={año}>
-            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 text-center">{año}</p>
-            <ResponsiveContainer width="100%" height={140} debounce={150}>
-              <BarChart data={yearData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-                <XAxis dataKey="tipoResiduo" tick={{ fontSize: 9, fill: "#64748b" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 9, fill: "#64748b" }} axisLine={false} tickLine={false} width={30} />
+    <ChartCard
+      title="Recolección por año y material"
+      description="Desglose anual del resultado filtrado."
+      isLoading={isLoading}
+      error={error}
+    >
+      <div className="grid gap-4 sm:grid-cols-2">
+        {years.map((year) => (
+          <div key={year}>
+            <p className="mb-1 text-center text-xs font-medium text-slate-500 dark:text-slate-400">
+              {year}
+            </p>
+
+            <ResponsiveContainer
+              width="100%"
+              height={140}
+              debounce={150}
+            >
+              <BarChart
+                data={
+                  dataByYear[year] ?? []
+                }
+                margin={{
+                  top: 5,
+                  right: 5,
+                  left: 0,
+                  bottom: 0,
+                }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="#e2e8f0"
+                  vertical={false}
+                />
+
+                <XAxis
+                  dataKey="tipoResiduo"
+                  tick={{
+                    fontSize: 9,
+                    fill: "#64748b",
+                  }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+
+                <YAxis
+                  tick={{
+                    fontSize: 9,
+                    fill: "#64748b",
+                  }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={30}
+                />
+
                 <Tooltip
-                  formatter={(v) => [
-                    typeof v === "number" ? `${v.toLocaleString("es-MX")} kg` : `${v ?? 0} kg`,
+                  formatter={(value) => [
+                    typeof value ===
+                    "number"
+                      ? `${value.toLocaleString("es-MX")} kg`
+                      : `${value ?? 0} kg`,
                     "Total",
                   ]}
-                  contentStyle={{ fontSize: 12, borderRadius: 8 }}
+                  contentStyle={{
+                    fontSize: 12,
+                    borderRadius: 8,
+                  }}
                 />
-                <Bar dataKey="totalKg" fill={CHART_COLORS.primary} radius={[4, 4, 0, 0]} />
+
+                <Bar
+                  dataKey="totalKg"
+                  fill={
+                    CHART_COLORS.primary
+                  }
+                  radius={[
+                    4,
+                    4,
+                    0,
+                    0,
+                  ]}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -52,6 +122,4 @@ const ResiduosPorAñoChart: React.FC = () => {
       </div>
     </ChartCard>
   );
-};
-
-export default ResiduosPorAñoChart;
+}
