@@ -417,50 +417,57 @@ export default function GlobalSearch({
           aria-hidden="true"
         />
 
+        <div className="relative flex h-10 w-72 items-center rounded-xl border border-slate-200/80 bg-slate-100/70 shadow-inner shadow-slate-200/30 transition-all duration-200 focus-within:border-emerald-500 focus-within:bg-white focus-within:ring-3 focus-within:ring-emerald-500/10 dark:border-slate-800 dark:bg-slate-900/80 dark:shadow-black/10 dark:focus-within:border-emerald-500/70 dark:focus-within:bg-slate-900 dark:focus-within:ring-emerald-500/10">
+  <FiSearch
+    className="pointer-events-none absolute left-3.5 h-4 w-4 text-slate-400 dark:text-slate-500"
+    aria-hidden="true"
+  />
+
         <input
-          ref={desktopInputRef}
-          id="global-search-desktop"
-          name="global-search-desktop"
-          type="search"
-          role="combobox"
-          aria-label="Buscar secciones"
-          aria-expanded={
+            ref={desktopInputRef}
+            id="global-search-desktop"
+            name="global-search-desktop"
+            type="search"
+            role="combobox"
+            aria-label="Buscar secciones"
+            aria-expanded={
             showDesktopResults
-          }
-          aria-controls="global-search-desktop-results"
-          aria-autocomplete="list"
-          aria-activedescendant={
+            }
+            aria-controls="global-search-desktop-results"
+            aria-autocomplete="list"
+            aria-activedescendant={
             showDesktopResults &&
             results[activeIndex]
-              ? `global-search-desktop-results-option-${results[activeIndex].id}`
-              : undefined
-          }
-          autoComplete="off"
-          value={query}
-          placeholder="Buscar secciones..."
-          onFocus={() => {
+                ? `global-search-desktop-results-option-${results[activeIndex].id}`
+                : undefined
+            }
+            autoComplete="off"
+            value={query}
+            placeholder="Buscar secciones..."
+            onFocus={() => {
             setDesktopOpen(true);
             setActiveIndex(0);
-          }}
-          onClick={() => {
+            }}
+            onClick={() => {
             setDesktopOpen(true);
-          }}
-          onChange={(event) => {
+            }}
+            onChange={(event) => {
             setDesktopOpen(true);
 
             handleQueryChange(
-              event.target.value
+                event.target.value
             );
-          }}
-          onKeyDown={
+            }}
+            onKeyDown={
             handleInputKeyDown
-          }
-          className="w-72 rounded-xl border border-transparent bg-slate-100/70 py-2 pl-10 pr-16 text-xs font-medium text-slate-800 placeholder-slate-400 transition-all duration-200 focus:border-emerald-500 focus:bg-white focus:outline-none"
+            }
+            className="h-full w-full appearance-none bg-transparent pl-10 pr-14 text-xs font-medium text-slate-800 outline-none placeholder:text-slate-400 dark:text-slate-100 dark:placeholder:text-slate-500"
         />
 
-        <span className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 items-center rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-400 xl:flex">
-          /
-        </span>
+        <kbd className="pointer-events-none absolute right-3 hidden min-w-6 items-center justify-center rounded-md border border-slate-200 bg-white px-1.5 py-0.5 font-sans text-[10px] font-semibold text-slate-400 shadow-sm xl:flex dark:border-slate-700 dark:bg-slate-800 dark:text-slate-500 dark:shadow-none">
+            /
+        </kbd>
+        </div>
 
         {showDesktopResults && (
           <SearchResults

@@ -27,10 +27,15 @@ const UserMenuHeader: React.FC<UserMenuHeaderProps> = ({
       src={avatarUrl}
     />
     <div>
-      <p className="text-sm font-medium text-slate-900 leading-tight">{name}</p>
-      <p className="text-xs text-slate-500 leading-tight">
+      <p className="text-sm font-medium leading-tight text-slate-900 dark:text-slate-100">
+        {name}
+      </p>
+
+      <p className="text-xs leading-tight text-slate-500 dark:text-slate-400">
         {role}
-        {organization ? ` · ${organization}` : ""}
+        {organization
+          ? ` · ${organization}`
+          : ""}
       </p>
     </div>
   </div>

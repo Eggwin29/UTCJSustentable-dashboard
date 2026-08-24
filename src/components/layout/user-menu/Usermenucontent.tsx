@@ -1,18 +1,18 @@
 import React from "react";
 
 import {
-  FiBell,
   FiLogOut,
   FiMoon,
   FiSettings,
-  FiUser,
   FiUsers,
+  FiUser
 } from "react-icons/fi";
 
 import UserMenuHeader from "./UserMenuHeader";
-import UserMenuSection from "./UserMenuSection";
 import UserMenuItem from "./UserMenuItem";
+import UserMenuSection from "./UserMenuSection";
 import UserMenuToggle from "./UserMenuToggle";
+
 
 interface UserMenuContentProps {
   name: string;
@@ -21,10 +21,15 @@ interface UserMenuContentProps {
   organization?: string;
   avatarUrl?: string;
   darkMode: boolean;
+
   onToggleDarkMode: (
     checked: boolean
   ) => void;
-  onNavigate: (path: string) => void;
+
+  onNavigate: (
+    path: string
+  ) => void;
+
   onSignOut: () => void;
 }
 
@@ -48,28 +53,21 @@ const UserMenuContent: React.FC<
       organization={organization}
       avatarUrl={avatarUrl}
     />
-
     <UserMenuSection>
-      <UserMenuItem
-        icon={<FiUser size={16} />}
-        label="Mi perfil"
-        onClick={() =>
-          onNavigate("/perfil")
-        }
-      />
-
-      <UserMenuItem
-        icon={<FiBell size={16} />}
-        label="Notificaciones"
-        onClick={() =>
-          onNavigate(
-            "/notificaciones"
-          )
-        }
-      />
-    </UserMenuSection>
+          <UserMenuItem
+            icon={
+              <FiUser size={16} />
+            }
+            label="Mi perfil"
+            onClick={() =>
+              onNavigate("/perfil")
+            }
+          />
+        </UserMenuSection>
+        
 
     {canAccessAdmin && (
+      
       <UserMenuSection>
         <UserMenuItem
           icon={
@@ -97,7 +95,9 @@ const UserMenuContent: React.FC<
 
     <UserMenuSection>
       <UserMenuToggle
-        icon={<FiMoon size={16} />}
+        icon={
+          <FiMoon size={16} />
+        }
         label="Modo oscuro"
         checked={darkMode}
         onChange={
@@ -108,7 +108,9 @@ const UserMenuContent: React.FC<
 
     <UserMenuSection>
       <UserMenuItem
-        icon={<FiLogOut size={16} />}
+        icon={
+          <FiLogOut size={16} />
+        }
         label="Cerrar sesión"
         variant="danger"
         onClick={onSignOut}

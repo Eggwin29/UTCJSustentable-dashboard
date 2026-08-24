@@ -7,15 +7,21 @@ import {
 } from "react";
 
 import {
+  FiCalendar,
+  FiClock,
   FiEdit2,
+  FiInfo,
   FiPlus,
   FiRefreshCw,
+  FiSun,
   FiUsers,
 } from "react-icons/fi";
 
+import StatCard from "@/components/charts/StatCard";
 import HumanCapitalForm from "@/components/forms/HumanCapitalForm";
 import Badge from "@/components/ui/Badge/Badge";
 import Button from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import Pagination from "@/components/ui/pagination";
 import Skeleton from "@/components/ui/skeleton/Skeleton";
 import { Table } from "@/components/ui/table";
@@ -115,10 +121,7 @@ export default function HumanCapitalSection() {
       academicTermsService.getAll(),
     ])
       .then(
-        ([
-          recordsData,
-          termsData,
-        ]) => {
+        ([recordsData, termsData]) => {
           if (cancelled) {
             return;
           }
@@ -178,10 +181,7 @@ export default function HumanCapitalSection() {
         animationFrame
       );
     };
-  }, [
-    showForm,
-    editingRecord?.id,
-  ]);
+  }, [showForm, editingRecord?.id]);
 
   const registeredAcademicTermIds =
     useMemo(
@@ -305,218 +305,407 @@ export default function HumanCapitalSection() {
 
   return (
     <div className="space-y-6">
-      <section className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-slate-800 dark:text-white">
-            Capital humano
-          </h2>
+      <Card
+        variant="outlined"
+        className="relative overflow-hidden"
+      >
+        <span
+          aria-hidden="true"
+          className="
+            absolute inset-y-0
+            left-0 w-1
+            bg-sky-500
+          "
+        />
 
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Participación agregada por
-            turno y cuatrimestre.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap gap-3">
-          <Button
-            variant="outline"
-            leftIcon={
-              <FiRefreshCw />
-            }
-            onClick={() =>
-              void loadData()
-            }
-            loading={loading}
+        <Card.Body
+          className="
+            p-5 pl-6
+            sm:p-6 sm:pl-7
+          "
+        >
+          <div
+            className="
+              flex flex-col gap-5
+              lg:flex-row
+              lg:items-center
+              lg:justify-between
+            "
           >
-            Actualizar
-          </Button>
-
-          {canManage &&
-            !showForm && (
-              <Button
-                leftIcon={<FiPlus />}
-                onClick={
-                  handleOpenCreate
-                }
-                disabled={
-                  availableAcademicTerms
-                    .length === 0
-                }
-                title={
-                  availableAcademicTerms
-                    .length === 0
-                    ? "Todos los cuatrimestres ya tienen un registro."
-                    : undefined
-                }
+            <div className="flex items-start gap-3">
+              <div
+                className="
+                  flex h-11 w-11 shrink-0
+                  items-center justify-center
+                  rounded-xl
+                  bg-sky-100
+                  text-xl text-sky-700
+                  dark:bg-sky-900/40
+                  dark:text-sky-300
+                "
               >
-                Nueva participación
+                <FiUsers aria-hidden="true" />
+              </div>
+
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2
+                    className="
+                      text-xl font-bold
+                      text-slate-900
+                      dark:text-white
+                    "
+                  >
+                    Capital humano
+                  </h2>
+
+                  <Badge
+                    variant={
+                      canManage
+                        ? "success"
+                        : "outline"
+                    }
+                  >
+                    {canManage
+                      ? "Administración"
+                      : "Solo consulta"}
+                  </Badge>
+                </div>
+
+                <p
+                  className="
+                    mt-1 text-sm leading-6
+                    text-slate-500
+                    dark:text-slate-400
+                  "
+                >
+                  Participación agregada de
+                  los turnos T.M. Martes y
+                  T.V. Jueves por
+                  cuatrimestre.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <Button
+                variant="outline"
+                leftIcon={
+                  <FiRefreshCw
+                    aria-hidden="true"
+                  />
+                }
+                onClick={() =>
+                  void loadData()
+                }
+                loading={loading}
+              >
+                Actualizar
               </Button>
-            )}
+
+              {canManage &&
+                !showForm && (
+                  <Button
+                    leftIcon={
+                      <FiPlus
+                        aria-hidden="true"
+                      />
+                    }
+                    onClick={
+                      handleOpenCreate
+                    }
+                    disabled={
+                      availableAcademicTerms
+                        .length === 0
+                    }
+                    title={
+                      availableAcademicTerms
+                        .length === 0
+                        ? "Todos los cuatrimestres ya tienen un registro."
+                        : undefined
+                    }
+                  >
+                    Nueva participación
+                  </Button>
+                )}
+            </div>
+          </div>
+
+          <div
+            className="
+              mt-5 flex gap-3
+              rounded-xl border
+              border-sky-200
+              bg-sky-50 p-4
+              dark:border-sky-900/60
+              dark:bg-sky-950/30
+            "
+          >
+            <FiInfo
+              className="
+                mt-0.5 shrink-0
+                text-sky-700
+                dark:text-sky-300
+              "
+              aria-hidden="true"
+            />
+
+            <div>
+              <p
+                className="
+                  text-sm font-semibold
+                  text-sky-800
+                  dark:text-sky-300
+                "
+              >
+                Un resultado por
+                cuatrimestre
+              </p>
+
+              <p
+                className="
+                  mt-1 text-sm leading-6
+                  text-sky-700
+                  dark:text-sky-400
+                "
+              >
+                Los dos turnos se concentran
+                en un mismo registro. Los
+                totales se calculan
+                automáticamente y el
+                historial no se elimina.
+              </p>
+            </div>
+          </div>
+        </Card.Body>
+      </Card>
+
+      {showForm && canManage && (
+        <div
+          ref={formContainerRef}
+          className="scroll-mt-28"
+        >
+          <HumanCapitalForm
+            key={
+              editingRecord?.id ??
+              "new-human-capital"
+            }
+            academicTerms={
+              formAcademicTerms
+            }
+            initialRecord={
+              editingRecord
+            }
+            onSaved={handleSaved}
+            onCancel={handleCloseForm}
+          />
         </div>
-      </section>
-
-      <section className="rounded-xl border border-sky-200 bg-sky-50 p-4 dark:border-sky-900/60 dark:bg-sky-950/30">
-        <p className="text-sm font-medium text-sky-800 dark:text-sky-300">
-          Un resultado por cuatrimestre
-        </p>
-
-        <p className="mt-1 text-sm text-sky-700 dark:text-sky-400">
-          Cada registro concentra la
-          participación de T.M. Martes y
-          T.V. Jueves. Los totales se
-          calculan automáticamente y los
-          registros no se eliminan.
-        </p>
-      </section>
-
-      {!canManage && (
-        <section className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/50">
-          <p className="text-sm text-slate-600 dark:text-slate-300">
-            Tienes acceso de consulta.
-            Solo un administrador puede
-            crear o editar estos
-            resultados.
-          </p>
-        </section>
       )}
 
-      {showForm &&
-        canManage && (
-          <div
-            ref={formContainerRef}
-            className="scroll-mt-28"
-          >
-            <HumanCapitalForm
-              key={
-                editingRecord?.id ??
-                "new-human-capital"
-              }
-              academicTerms={
-                formAcademicTerms
-              }
-              initialRecord={
-                editingRecord
-              }
-              onSaved={handleSaved}
-              onCancel={
-                handleCloseForm
-              }
-            />
-          </div>
-        )}
-
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <SummaryCard
+      <section
+        className="
+          grid gap-4
+          sm:grid-cols-2
+          xl:grid-cols-4
+        "
+      >
+        <StatCard
           label="Cuatrimestres registrados"
           value={records.length}
+          isLoading={loading}
+          accent="amber"
+          decimals={0}
+          icon={
+            <FiCalendar
+              aria-hidden="true"
+            />
+          }
+          helper={`${availableAcademicTerms.length.toLocaleString(
+            "es-MX"
+          )} periodos disponibles para registrar`}
         />
 
-        <SummaryCard
+        <StatCard
           label="T.M. Martes"
           value={totals.tmTuesday}
+          isLoading={loading}
+          accent="sky"
+          decimals={0}
+          icon={
+            <FiSun aria-hidden="true" />
+          }
+          helper="Participación acumulada del turno matutino"
         />
 
-        <SummaryCard
+        <StatCard
           label="T.V. Jueves"
           value={totals.tvThursday}
+          isLoading={loading}
+          accent="violet"
+          decimals={0}
+          icon={
+            <FiClock aria-hidden="true" />
+          }
+          helper="Participación acumulada del turno vespertino"
         />
 
-        <SummaryCard
+        <StatCard
           label="Participación total"
           value={
             totals.totalParticipants
           }
-          highlighted
+          isLoading={loading}
+          accent="emerald"
+          decimals={0}
+          icon={
+            <FiUsers aria-hidden="true" />
+          }
+          helper="Suma histórica de ambos turnos"
         />
       </section>
 
       {errorMessage && (
-        <section className="flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-red-900/60 dark:bg-red-950/30">
-          <p className="text-sm text-red-700 dark:text-red-300">
-            {errorMessage}
-          </p>
-
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() =>
-              void loadData()
-            }
+        <Card
+          variant="outlined"
+          className="
+            border-red-200
+            dark:border-red-900
+          "
+        >
+          <Card.Body
+            className="
+              flex flex-col gap-3 p-5
+              sm:flex-row
+              sm:items-center
+              sm:justify-between
+            "
           >
-            Reintentar
-          </Button>
-        </section>
+            <div>
+              <p
+                className="
+                  text-sm font-semibold
+                  text-red-700
+                  dark:text-red-400
+                "
+              >
+                {errorMessage}
+              </p>
+
+              <p
+                className="
+                  mt-1 text-sm
+                  text-slate-500
+                  dark:text-slate-400
+                "
+              >
+                Verifica la conexión con
+                Supabase e inténtalo de
+                nuevo.
+              </p>
+            </div>
+
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                void loadData()
+              }
+            >
+              Reintentar
+            </Button>
+          </Card.Body>
+        </Card>
       )}
 
-      <Table>
-        <Table.Head>
-          <Table.Row>
-            <Table.HeaderCell>
-              Cuatrimestre
-            </Table.HeaderCell>
+      <Card variant="outlined">
+        <Card.Header
+          className="
+            flex-row items-start
+            justify-between gap-4
+            border-b border-slate-100
+            p-5
+            dark:border-slate-800
+          "
+        >
+          <div>
+            <Card.Title>
+              Historial de Capital humano
+            </Card.Title>
 
-            <Table.HeaderCell align="right">
-              T.M. Martes
-            </Table.HeaderCell>
+            <Card.Description className="mt-1">
+              Resultados ordenados del
+              cuatrimestre más reciente al
+              más antiguo.
+            </Card.Description>
+          </div>
 
-            <Table.HeaderCell align="right">
-              T.V. Jueves
-            </Table.HeaderCell>
+          <Badge variant="secondary">
+            {formatNumber(records.length)}
 
-            <Table.HeaderCell align="right">
-              Total
-            </Table.HeaderCell>
+            {records.length === 1
+              ? " registro"
+              : " registros"}
+          </Badge>
+        </Card.Header>
 
-            <Table.HeaderCell>
-              Observaciones
-            </Table.HeaderCell>
+        <Table
+          className="
+            rounded-none
+            border-x-0 border-b-0
+            border-t-0
+          "
+        >
+          <Table.Head>
+            <Table.Row>
+              <Table.HeaderCell>
+                Cuatrimestre
+              </Table.HeaderCell>
 
-            <Table.HeaderCell>
-              Actualización
-            </Table.HeaderCell>
+              <Table.HeaderCell align="right">
+                T.M. Martes
+              </Table.HeaderCell>
 
-            <Table.HeaderCell align="right">
-              Acciones
-            </Table.HeaderCell>
-          </Table.Row>
-        </Table.Head>
+              <Table.HeaderCell align="right">
+                T.V. Jueves
+              </Table.HeaderCell>
 
-        <Table.Body>
-          {loading &&
-            Array.from({
-              length: 5,
-            }).map(
-              (_, rowIndex) => (
-                <Table.Row
-                  key={rowIndex}
-                >
-                  {Array.from({
-                    length: 7,
-                  }).map(
-                    (
-                      _,
-                      cellIndex
-                    ) => (
-                      <Table.Cell
-                        key={
-                          cellIndex
-                        }
-                        align={
-                          [
-                            1,
-                            2,
-                            3,
-                            6,
-                          ].includes(
-                            cellIndex
-                          )
-                            ? "right"
-                            : "left"
-                        }
-                      >
-                        <Skeleton
-                          variant="text"
-                          className={
+              <Table.HeaderCell align="right">
+                Total
+              </Table.HeaderCell>
+
+              <Table.HeaderCell>
+                Observaciones
+              </Table.HeaderCell>
+
+              <Table.HeaderCell>
+                Actualización
+              </Table.HeaderCell>
+
+              <Table.HeaderCell align="right">
+                Acciones
+              </Table.HeaderCell>
+            </Table.Row>
+          </Table.Head>
+
+          <Table.Body>
+            {loading &&
+              Array.from({
+                length: 5,
+              }).map(
+                (_, rowIndex) => (
+                  <Table.Row
+                    key={rowIndex}
+                  >
+                    {Array.from({
+                      length: 7,
+                    }).map(
+                      (
+                        _,
+                        cellIndex
+                      ) => (
+                        <Table.Cell
+                          key={cellIndex}
+                          align={
                             [
                               1,
                               2,
@@ -525,188 +714,200 @@ export default function HumanCapitalSection() {
                             ].includes(
                               cellIndex
                             )
-                              ? "ml-auto w-20"
-                              : "w-28"
+                              ? "right"
+                              : "left"
                           }
-                        />
-                      </Table.Cell>
-                    )
-                  )}
-                </Table.Row>
-              )
-            )}
-
-          {!loading &&
-            !errorMessage &&
-            records.length === 0 && (
-              <Table.Empty
-                colSpan={7}
-                icon={
-                  <FiUsers size={30} />
-                }
-                title="No hay participación registrada"
-                description="Agrega el primer resultado de Capital humano."
-              />
-            )}
-
-          {!loading &&
-            !errorMessage &&
-            paginatedRecords.map(
-              (record) => (
-                <Table.Row
-                  key={record.id}
-                >
-                  <Table.Cell>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-medium text-slate-800 dark:text-white">
-                        {
-                          record.academicTermLabel
-                        }
-                      </span>
-
-                      {isCurrentAcademicTerm(
-                        record,
-                        academicTerms
-                      ) && (
-                        <Badge
-                          variant="success"
-                          dot
                         >
-                          Actual
-                        </Badge>
-                      )}
-                    </div>
-                  </Table.Cell>
-
-                  <Table.Cell align="right">
-                    {formatNumber(
-                      record.tmTuesday
+                          <Skeleton
+                            variant="text"
+                            className={
+                              [
+                                1,
+                                2,
+                                3,
+                                6,
+                              ].includes(
+                                cellIndex
+                              )
+                                ? "ml-auto w-20"
+                                : "w-28"
+                            }
+                          />
+                        </Table.Cell>
+                      )
                     )}
-                  </Table.Cell>
+                  </Table.Row>
+                )
+              )}
 
-                  <Table.Cell align="right">
-                    {formatNumber(
-                      record.tvThursday
-                    )}
-                  </Table.Cell>
+            {!loading &&
+              !errorMessage &&
+              records.length === 0 && (
+                <Table.Empty
+                  colSpan={7}
+                  icon={
+                    <FiUsers size={30} />
+                  }
+                  title="No hay participación registrada"
+                  description="Agrega el primer resultado de Capital humano."
+                />
+              )}
 
-                  <Table.Cell align="right">
-                    <span className="font-semibold text-slate-800 dark:text-white">
+            {!loading &&
+              !errorMessage &&
+              paginatedRecords.map(
+                (record) => (
+                  <Table.Row
+                    key={record.id}
+                    clickable
+                  >
+                    <Table.Cell>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className="
+                            font-medium
+                            text-slate-800
+                            dark:text-white
+                          "
+                        >
+                          {
+                            record.academicTermLabel
+                          }
+                        </span>
+
+                        {isCurrentAcademicTerm(
+                          record,
+                          academicTerms
+                        ) && (
+                          <Badge
+                            variant="success"
+                            dot
+                          >
+                            Actual
+                          </Badge>
+                        )}
+                      </div>
+                    </Table.Cell>
+
+                    <Table.Cell align="right">
                       {formatNumber(
-                        record.totalParticipants
+                        record.tmTuesday
                       )}
-                    </span>
-                  </Table.Cell>
+                    </Table.Cell>
 
-                  <Table.Cell>
-                    <span
-                      className="block max-w-xs truncate"
-                      title={
-                        record.notes ??
-                        undefined
-                      }
-                    >
-                      {record.notes ??
-                        "—"}
-                    </span>
-                  </Table.Cell>
+                    <Table.Cell align="right">
+                      {formatNumber(
+                        record.tvThursday
+                      )}
+                    </Table.Cell>
 
-                  <Table.Cell className="whitespace-nowrap">
-                    {formatDate(
-                      record.updatedAt
-                    )}
-                  </Table.Cell>
+                    <Table.Cell align="right">
+                      <span
+                        className="
+                          font-semibold
+                          text-slate-800
+                          dark:text-white
+                        "
+                      >
+                        {formatNumber(
+                          record.totalParticipants
+                        )}
+                      </span>
+                    </Table.Cell>
 
-                  <Table.Cell align="right">
-                    {canManage ? (
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        leftIcon={
-                          <FiEdit2 />
-                        }
-                        onClick={() =>
-                          handleOpenEdit(
-                            record
-                          )
+                    <Table.Cell>
+                      <span
+                        className="
+                          block max-w-xs
+                          truncate
+                        "
+                        title={
+                          record.notes ??
+                          undefined
                         }
                       >
-                        Editar
-                      </Button>
-                    ) : (
-                      <Badge variant="outline">
-                        Solo lectura
-                      </Badge>
-                    )}
-                  </Table.Cell>
-                </Table.Row>
-              )
-            )}
-        </Table.Body>
-      </Table>
+                        {record.notes ?? "—"}
+                      </span>
+                    </Table.Cell>
 
-      {!loading &&
-        !errorMessage && (
-          <Pagination
-            currentPage={currentPage}
-            totalItems={totalItems}
-            pageSize={pageSize}
-            onPageChange={
-              setCurrentPage
-            }
-            onPageSizeChange={
-              setPageSize
-            }
-          />
-        )}
+                    <Table.Cell className="whitespace-nowrap">
+                      {formatDate(
+                        record.updatedAt
+                      )}
+                    </Table.Cell>
 
-      <p className="text-xs text-slate-400 dark:text-slate-500">
+                    <Table.Cell align="right">
+                      {canManage ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          leftIcon={
+                            <FiEdit2
+                              aria-hidden="true"
+                            />
+                          }
+                          onClick={() =>
+                            handleOpenEdit(
+                              record
+                            )
+                          }
+                        >
+                          Editar
+                        </Button>
+                      ) : (
+                        <Badge variant="outline">
+                          Solo lectura
+                        </Badge>
+                      )}
+                    </Table.Cell>
+                  </Table.Row>
+                )
+              )}
+          </Table.Body>
+        </Table>
+
+        {!loading &&
+          !errorMessage && (
+            <Card.Body
+              className="
+                border-t
+                border-slate-100
+                p-4
+                dark:border-slate-800
+              "
+            >
+              <Pagination
+                currentPage={currentPage}
+                totalItems={totalItems}
+                pageSize={pageSize}
+                onPageChange={
+                  setCurrentPage
+                }
+                onPageSizeChange={
+                  setPageSize
+                }
+                className="
+                  mt-0 border-0
+                  bg-slate-50
+                  shadow-none
+                  dark:bg-slate-950/40
+                "
+              />
+            </Card.Body>
+          )}
+      </Card>
+
+      <p
+        className="
+          text-xs leading-5
+          text-slate-400
+          dark:text-slate-500
+        "
+      >
         Los registros no se eliminan para
         conservar el historial de
         participación del programa.
-      </p>
-    </div>
-  );
-}
-
-interface SummaryCardProps {
-  label: string;
-  value: number;
-  highlighted?: boolean;
-}
-
-function SummaryCard({
-  label,
-  value,
-  highlighted = false,
-}: SummaryCardProps) {
-  return (
-    <div
-      className={
-        highlighted
-          ? "rounded-xl border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-900/60 dark:bg-emerald-950/30"
-          : "rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900"
-      }
-    >
-      <p
-        className={
-          highlighted
-            ? "text-sm font-medium text-emerald-700 dark:text-emerald-300"
-            : "text-sm font-medium text-slate-500 dark:text-slate-400"
-        }
-      >
-        {label}
-      </p>
-
-      <p
-        className={
-          highlighted
-            ? "mt-1 text-3xl font-bold text-emerald-800 dark:text-emerald-200"
-            : "mt-1 text-3xl font-bold text-slate-800 dark:text-white"
-        }
-      >
-        {formatNumber(value)}
       </p>
     </div>
   );

@@ -6,6 +6,7 @@ import {
 
 import {
   FiAlertTriangle,
+  FiPackage,
   FiSave,
   FiX,
 } from "react-icons/fi";
@@ -14,7 +15,6 @@ import Button from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Dropdown from "@/components/ui/select";
 import Textarea from "@/components/ui/textArea";
-
 import {
   useToast,
 } from "@/components/ui/toast/toast";
@@ -79,8 +79,7 @@ function getInitialForm(
       date: collection.date,
 
       academicTermId:
-        collection.academicTermId ??
-        "",
+        collection.academicTermId ?? "",
 
       materialId:
         collection.materialId,
@@ -144,34 +143,29 @@ export default function CollectionForm({
     setIsSubmitting,
   ] = useState(false);
 
-  const materialOptions =
-    useMemo(
-      () =>
-        materials.map(
-          (material) => ({
-            value: material.id,
-            label: material.name,
-          })
-        ),
-      [materials]
-    );
+  const materialOptions = useMemo(
+    () =>
+      materials.map((material) => ({
+        value: material.id,
+        label: material.name,
+      })),
+    [materials]
+  );
 
-  const academicTermOptions =
-    useMemo(
-      () =>
-        academicTerms.map(
-          (academicTerm) => ({
-            value:
-              academicTerm.id,
+  const academicTermOptions = useMemo(
+    () =>
+      academicTerms.map(
+        (academicTerm) => ({
+          value: academicTerm.id,
 
-            label:
-              academicTerm.isCurrent
-                ? `${academicTerm.label} (Actual)`
-                : academicTerm.label,
-          })
-        ),
-      [academicTerms]
-    );
+          label:
+            academicTerm.isCurrent
+              ? `${academicTerm.label} (Actual)`
+              : academicTerm.label,
+        })
+      ),
+    [academicTerms]
+  );
 
   const selectedAcademicTerm =
     useMemo(
@@ -191,14 +185,10 @@ export default function CollectionForm({
     Boolean(
       form.date &&
         selectedAcademicTerm &&
-        (
-          form.date <
-            selectedAcademicTerm
-              .startDate ||
+        (form.date <
+          selectedAcademicTerm.startDate ||
           form.date >
-            selectedAcademicTerm
-              .endDate
-        )
+            selectedAcademicTerm.endDate)
     );
 
   const updateField = <
@@ -221,8 +211,7 @@ export default function CollectionForm({
   };
 
   const validate = () => {
-    const nextErrors: FormErrors =
-      {};
+    const nextErrors: FormErrors = {};
 
     if (!form.date) {
       nextErrors.date =
@@ -341,21 +330,75 @@ export default function CollectionForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-700 dark:bg-slate-900"
+      className="
+        relative overflow-hidden
+        rounded-2xl border
+        border-slate-200 bg-white
+        shadow-sm
+        dark:border-slate-700
+        dark:bg-slate-900
+      "
     >
-      <div className="mb-6 flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-white">
-            {isEditing
-              ? "Editar recolección"
-              : "Nueva recolección"}
-          </h2>
+      <span
+        aria-hidden="true"
+        className="
+          absolute inset-x-0 top-0 h-1
+          bg-linear-to-r
+          from-emerald-600
+          via-emerald-500
+          to-teal-400
+        "
+      />
 
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            {isEditing
-              ? "Modifica la información del registro seleccionado."
-              : "Registra una nueva entrada de residuos recolectados."}
-          </p>
+      <div
+        className="
+          flex items-start
+          justify-between gap-4
+          border-b border-slate-100
+          p-5 pt-6
+          dark:border-slate-800
+          sm:p-6 sm:pt-7
+        "
+      >
+        <div className="flex items-start gap-3">
+          <div
+            className="
+              flex h-11 w-11 shrink-0
+              items-center justify-center
+              rounded-xl bg-emerald-100
+              text-xl text-emerald-700
+              dark:bg-emerald-500/10
+              dark:text-emerald-400
+            "
+          >
+            <FiPackage aria-hidden="true" />
+          </div>
+
+          <div>
+            <h2
+              className="
+                text-lg font-semibold
+                text-slate-800
+                dark:text-white
+              "
+            >
+              {isEditing
+                ? "Editar recolección"
+                : "Nueva recolección"}
+            </h2>
+
+            <p
+              className="
+                mt-1 text-sm
+                text-slate-500
+                dark:text-slate-400
+              "
+            >
+              {isEditing
+                ? "Modifica la información del registro seleccionado."
+                : "Registra una nueva entrada de residuos recolectados."}
+            </p>
+          </div>
         </div>
 
         <Button
@@ -370,8 +413,16 @@ export default function CollectionForm({
         </Button>
       </div>
 
-      <div className="grid gap-5 md:grid-cols-2">
+      <div
+        className="
+          grid gap-5 p-5
+          sm:p-6
+          md:grid-cols-2
+        "
+      >
         <Input
+          id="collection-date"
+          name="collectionDate"
           type="date"
           label="Fecha"
           value={form.date}
@@ -386,28 +437,24 @@ export default function CollectionForm({
         />
 
         <Dropdown
+          id="collection-academic-term"
           label="Cuatrimestre"
           placeholder="Selecciona un cuatrimestre"
-          options={
-            academicTermOptions
-          }
-          value={
-            form.academicTermId
-          }
+          options={academicTermOptions}
+          value={form.academicTermId}
           onChange={(value) =>
             updateField(
               "academicTermId",
               String(value)
             )
           }
-          error={
-            errors.academicTermId
-          }
+          error={errors.academicTermId}
           helperText="El periodo actual se selecciona automáticamente."
           disabled={isSubmitting}
         />
 
         <Dropdown
+          id="collection-material"
           label="Material"
           placeholder="Selecciona un material"
           options={materialOptions}
@@ -423,6 +470,8 @@ export default function CollectionForm({
         />
 
         <Input
+          id="collection-kilograms"
+          name="collectionKilograms"
           type="number"
           label="Kilogramos"
           placeholder="Ej. 42.5"
@@ -441,6 +490,8 @@ export default function CollectionForm({
 
         <div className="md:col-span-2">
           <Input
+            id="collection-location"
+            name="collectionLocation"
             label="Ubicación"
             placeholder="Ej. Edificio A"
             value={form.location}
@@ -458,7 +509,19 @@ export default function CollectionForm({
 
       {dateOutsideAcademicTerm &&
         selectedAcademicTerm && (
-          <div className="mt-5 flex gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300">
+          <div
+            className="
+              mx-5 flex gap-3
+              rounded-xl border
+              border-amber-200
+              bg-amber-50 p-4
+              text-amber-800
+              dark:border-amber-900/60
+              dark:bg-amber-950/30
+              dark:text-amber-300
+              sm:mx-6
+            "
+          >
             <FiAlertTriangle
               className="mt-0.5 shrink-0"
               aria-hidden="true"
@@ -466,28 +529,22 @@ export default function CollectionForm({
 
             <div>
               <p className="text-sm font-semibold">
-                Fecha fuera del
-                cuatrimestre
+                Fecha fuera del cuatrimestre
               </p>
 
               <p className="mt-1 text-sm">
-                {
-                  selectedAcademicTerm
-                    .label
-                }
+                {selectedAcademicTerm.label}
 
                 {" comprende del "}
 
                 {formatTermDate(
-                  selectedAcademicTerm
-                    .startDate
+                  selectedAcademicTerm.startDate
                 )}
 
                 {" al "}
 
                 {formatTermDate(
-                  selectedAcademicTerm
-                    .endDate
+                  selectedAcademicTerm.endDate
                 )}
 
                 {
@@ -498,8 +555,15 @@ export default function CollectionForm({
           </div>
         )}
 
-      <div className="mt-5">
+      <div
+        className="
+          px-5 pb-5 pt-5
+          sm:px-6 sm:pb-6
+        "
+      >
         <Textarea
+          id="collection-notes"
+          name="collectionNotes"
           label="Observaciones"
           placeholder="Información adicional sobre la recolección..."
           rows={3}
@@ -515,25 +579,50 @@ export default function CollectionForm({
         />
       </div>
 
-      <div className="mt-6 flex justify-end gap-3">
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={onCancel}
-          disabled={isSubmitting}
+      <div
+        className="
+          flex flex-col-reverse gap-3
+          border-t border-slate-100
+          bg-slate-50/70 p-5
+          dark:border-slate-800
+          dark:bg-slate-950/35
+          sm:flex-row
+          sm:items-center
+          sm:justify-between
+          sm:px-6
+        "
+      >
+        <p
+          className="
+            text-xs text-slate-500
+            dark:text-slate-400
+          "
         >
-          Cancelar
-        </Button>
+          Los campos marcados por el
+          formulario son necesarios para
+          guardar el registro.
+        </p>
 
-        <Button
-          type="submit"
-          loading={isSubmitting}
-          leftIcon={<FiSave />}
-        >
-          {isEditing
-            ? "Guardar cambios"
-            : "Guardar recolección"}
-        </Button>
+        <div className="flex justify-end gap-3">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onCancel}
+            disabled={isSubmitting}
+          >
+            Cancelar
+          </Button>
+
+          <Button
+            type="submit"
+            loading={isSubmitting}
+            leftIcon={<FiSave />}
+          >
+            {isEditing
+              ? "Guardar cambios"
+              : "Guardar recolección"}
+          </Button>
+        </div>
       </div>
     </form>
   );
@@ -568,8 +657,6 @@ function formatTermDate(
       timeZone: "UTC",
     }
   ).format(
-    new Date(
-      `${date}T00:00:00Z`
-    )
+    new Date(`${date}T00:00:00Z`)
   );
 }

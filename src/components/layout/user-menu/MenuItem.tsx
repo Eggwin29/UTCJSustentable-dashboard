@@ -3,8 +3,17 @@ import React, {
   useState,
 } from "react";
 
-import { useClickOutside } from "@/hooks/useClickOutside.ts";
-import { useMediaQuery } from "@/hooks/useMediaQuery.ts";
+import {
+  useClickOutside,
+} from "@/hooks/useClickOutside.ts";
+
+import {
+  useMediaQuery,
+} from "@/hooks/useMediaQuery.ts";
+
+import {
+  useTheme,
+} from "@/context/theme/useTheme";
 
 import UserMenuTrigger from "./UserMenuTrigger.tsx";
 import UserMenuContent from "./Usermenucontent.tsx";
@@ -17,110 +26,128 @@ interface UserMenuProps {
   canAccessAdmin: boolean;
   organization?: string;
   avatarUrl?: string;
-  onNavigate?: (path: string) => void;
-  onToggleDarkMode?: (
-    enabled: boolean
+
+  onNavigate?: (
+    path: string
   ) => void;
+
   onSignOut?: () => void;
 }
 
-const UserMenu: React.FC<UserMenuProps> = ({
-  name,
-  role,
-  canAccessAdmin,
-  organization,
-  avatarUrl,
-  onNavigate,
-  onToggleDarkMode,
-  onSignOut,
-}) => {
-  const [open, setOpen] =
-    useState(false);
+const UserMenu:
+  React.FC<UserMenuProps> = ({
+    name,
+    role,
+    canAccessAdmin,
+    organization,
+    avatarUrl,
+    onNavigate,
+    onSignOut,
+  }) => {
+    const [
+      open,
+      setOpen,
+    ] = useState(false);
 
-  const [darkMode, setDarkMode] =
-    useState(false);
+    const {
+      isDarkMode,
+      setDarkMode,
+    } = useTheme();
 
-  const containerRef =
-    useRef<HTMLDivElement>(null);
+    const containerRef =
+      useRef<HTMLDivElement>(
+        null
+      );
 
-  const isDesktop = useMediaQuery(
-    "(min-width: 768px)"
-  );
+    const isDesktop =
+      useMediaQuery(
+        "(min-width: 768px)"
+      );
 
-  useClickOutside(
-    containerRef,
-    () => setOpen(false),
-    open && isDesktop
-  );
+    useClickOutside(
+      containerRef,
+      () => setOpen(false),
+      open && isDesktop
+    );
 
-  const handleToggleDarkMode = (
-    checked: boolean
-  ) => {
-    setDarkMode(checked);
-    onToggleDarkMode?.(checked);
-  };
+    const handleToggleDarkMode = (
+      checked: boolean
+    ) => {
+      setDarkMode(checked);
+    };
 
-  const navigateAndClose = (
-    path: string
-  ) => {
-    onNavigate?.(path);
-    setOpen(false);
-  };
+    const navigateAndClose = (
+      path: string
+    ) => {
+      onNavigate?.(path);
+      setOpen(false);
+    };
 
-  const handleSignOut = () => {
-    onSignOut?.();
-    setOpen(false);
-  };
+    const handleSignOut = () => {
+      onSignOut?.();
+      setOpen(false);
+    };
 
-  const content = (
-    <UserMenuContent
-      name={name}
-      role={role}
-      canAccessAdmin={
-        canAccessAdmin
-      }
-      organization={organization}
-      avatarUrl={avatarUrl}
-      darkMode={darkMode}
-      onToggleDarkMode={
-        handleToggleDarkMode
-      }
-      onNavigate={navigateAndClose}
-      onSignOut={handleSignOut}
-    />
-  );
-
-  return (
-    <div
-      className="relative"
-      ref={containerRef}
-    >
-      <UserMenuTrigger
+    const content = (
+      <UserMenuContent
         name={name}
         role={role}
+        canAccessAdmin={
+          canAccessAdmin
+        }
+        organization={
+          organization
+        }
         avatarUrl={avatarUrl}
-        open={open}
-        onClick={() =>
-          setOpen((previous) => !previous)
+        darkMode={isDarkMode}
+        onToggleDarkMode={
+          handleToggleDarkMode
+        }
+        onNavigate={
+          navigateAndClose
+        }
+        onSignOut={
+          handleSignOut
         }
       />
+    );
 
-      {open &&
-        (isDesktop ? (
-          <UserMenuDesktopPanel>
-            {content}
-          </UserMenuDesktopPanel>
-        ) : (
-          <UserMenuMobilePanel
-            onClose={() =>
-              setOpen(false)
-            }
-          >
-            {content}
-          </UserMenuMobilePanel>
-        ))}
-    </div>
-  );
-};
+    return (
+      <div
+        className="relative"
+        ref={containerRef}
+      >
+        <UserMenuTrigger
+          name={name}
+          role={role}
+          avatarUrl={avatarUrl}
+          open={open}
+          onClick={() =>
+            setOpen(
+              (previous) =>
+                !previous
+            )
+          }
+        />
+
+        {open &&
+          (
+            isDesktop ? (
+              <UserMenuDesktopPanel>
+                {content}
+              </UserMenuDesktopPanel>
+            ) : (
+              <UserMenuMobilePanel
+                onClose={() =>
+                  setOpen(false)
+                }
+              >
+                {content}
+              </UserMenuMobilePanel>
+            )
+          )}
+      </div>
+    );
+  };
 
 export default UserMenu;

@@ -1,7 +1,12 @@
+import type {
+  IconType,
+} from "react-icons";
+
 import {
   FiBookOpen,
   FiCalendar,
   FiPackage,
+  FiSettings,
 } from "react-icons/fi";
 
 import {
@@ -13,6 +18,8 @@ import AcademicProgramsSettings from "@/components/settings/AcademicProgramsSett
 import AcademicTermsSettings from "@/components/settings/AcademicTermsSettings";
 import MaterialsSettings from "@/components/settings/MaterialsSettings";
 
+import Badge from "@/components/ui/Badge/Badge";
+
 import { cn } from "@/utils/cn";
 
 type SettingsTab =
@@ -20,23 +27,37 @@ type SettingsTab =
   | "academic-programs"
   | "academic-terms";
 
-const tabs = [
+interface SettingsTabConfig {
+  id: SettingsTab;
+  hash: string;
+  label: string;
+  description: string;
+  icon: IconType;
+}
+
+const tabs: SettingsTabConfig[] = [
   {
-    id: "materials" as const,
+    id: "materials",
     hash: "configuracion-materiales",
     label: "Materiales",
+    description:
+      "Catálogo y factores de CO₂.",
     icon: FiPackage,
   },
   {
-    id: "academic-programs" as const,
+    id: "academic-programs",
     hash: "configuracion-carreras",
     label: "Carreras",
+    description:
+      "Programas para Capital estadías.",
     icon: FiBookOpen,
   },
   {
-    id: "academic-terms" as const,
+    id: "academic-terms",
     hash: "configuracion-cuatrimestres",
     label: "Cuatrimestres",
+    description:
+      "Periodos y cuatrimestre actual.",
     icon: FiCalendar,
   },
 ];
@@ -55,7 +76,7 @@ export default function Settings() {
     ) ?? tabs[0];
 
   const selectTab = (
-    tab: (typeof tabs)[number]
+    tab: SettingsTabConfig
   ) => {
     navigate(
       {
@@ -70,21 +91,96 @@ export default function Settings() {
   };
 
   return (
-    <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold text-slate-800 dark:text-white">
-          Configuración
-        </h1>
+    <div className="space-y-7">
+      <section
+        className="
+          relative overflow-hidden
+          rounded-2xl border
+          border-slate-200
+          bg-linear-to-r
+          from-white via-white
+          to-amber-50/70
+          p-6 shadow-sm
+          dark:border-slate-700
+          dark:from-slate-900
+          dark:via-slate-900
+          dark:to-amber-950/20
+          sm:p-7
+        "
+      >
+        <div
+          aria-hidden="true"
+          className="
+            absolute -right-14 -top-20
+            h-48 w-48 rounded-full
+            border-28
+            border-amber-500/5
+          "
+        />
 
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          Administra los catálogos y periodos académicos de la aplicación.
-        </p>
-      </header>
+        <div className="relative flex items-start gap-4">
+          <div
+            className="
+              flex h-13 w-13 shrink-0
+              items-center justify-center
+              rounded-2xl
+              bg-amber-100
+              text-2xl text-amber-700
+              dark:bg-amber-900/40
+              dark:text-amber-300
+            "
+          >
+            <FiSettings
+              aria-hidden="true"
+            />
+          </div>
+
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1
+                className="
+                  text-2xl font-bold
+                  text-slate-900
+                  dark:text-white
+                  sm:text-3xl
+                "
+              >
+                Configuración
+              </h1>
+
+              <Badge variant="warning">
+                3 catálogos
+              </Badge>
+            </div>
+
+            <p
+              className="
+                mt-2 max-w-2xl
+                text-sm leading-6
+                text-slate-500
+                dark:text-slate-400
+              "
+            >
+              Administra los materiales,
+              programas académicos y periodos
+              que utiliza UTCJ Sustentable en
+              sus registros y reportes.
+            </p>
+          </div>
+        </div>
+      </section>
 
       <div
         role="tablist"
         aria-label="Secciones de configuración"
-        className="flex gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-white p-1.5 dark:border-slate-700 dark:bg-slate-900"
+        className="
+          grid gap-3 rounded-2xl
+          border border-slate-200
+          bg-white p-2 shadow-sm
+          dark:border-slate-700
+          dark:bg-slate-900
+          md:grid-cols-3
+        "
       >
         {tabs.map((tab) => {
           const Icon = tab.icon;
@@ -100,22 +196,44 @@ export default function Settings() {
               role="tab"
               aria-selected={selected}
               aria-controls={tab.hash}
-              tabIndex={
-                selected ? 0 : -1
-              }
+              tabIndex={selected ? 0 : -1}
               onClick={() =>
                 selectTab(tab)
               }
               className={cn(
-                "inline-flex min-w-max items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors",
+                "group flex min-w-0 items-center gap-3 rounded-xl border px-4 py-3.5 text-left transition-all",
                 selected
-                  ? "bg-emerald-600 text-white shadow-sm"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+                  ? "border-emerald-600 bg-emerald-600 text-white shadow-sm"
+                  : "border-transparent text-slate-600 hover:border-slate-200 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-800 dark:hover:text-white"
               )}
             >
-              <Icon aria-hidden="true" />
+              <span
+                className={cn(
+                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg transition-colors",
+                  selected
+                    ? "bg-white/15 text-white"
+                    : "bg-slate-100 text-slate-500 group-hover:bg-white group-hover:text-emerald-700 dark:bg-slate-800 dark:text-slate-400 dark:group-hover:bg-slate-700 dark:group-hover:text-emerald-400"
+                )}
+              >
+                <Icon aria-hidden="true" />
+              </span>
 
-              {tab.label}
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold">
+                  {tab.label}
+                </span>
+
+                <span
+                  className={cn(
+                    "mt-0.5 block truncate text-xs",
+                    selected
+                      ? "text-emerald-50"
+                      : "text-slate-500 dark:text-slate-400"
+                  )}
+                >
+                  {tab.description}
+                </span>
+              </span>
             </button>
           );
         })}
@@ -126,7 +244,10 @@ export default function Settings() {
         role="tabpanel"
         aria-labelledby={`settings-tab-${activeTab}`}
         tabIndex={-1}
-        className="scroll-mt-6 focus:outline-none"
+        className="
+          scroll-mt-28
+          focus:outline-none
+        "
       >
         {activeTab ===
           "materials" && (

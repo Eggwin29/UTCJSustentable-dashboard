@@ -14,25 +14,25 @@ const variantConfig: Record<
 > = {
   success: {
     border: "border-emerald-500",
-    bg: "bg-emerald-50 dark:bg-emerald-500/10",
+    bg: "bg-emerald-50 dark:bg-emerald-950",
     iconBg: "bg-emerald-600",
     icon: <FiCheck className="h-3.5 w-3.5" />,
   },
   error: {
     border: "border-red-500",
-    bg: "bg-red-50 dark:bg-red-500/10",
+    bg: "bg-red-50 dark:bg-red-950",
     iconBg: "bg-red-600",
     icon: <FiX className="h-3.5 w-3.5" />,
   },
   warning: {
     border: "border-amber-500",
-    bg: "bg-amber-50 dark:bg-amber-500/10",
+    bg: "bg-amber-50 dark:bg-amber-950",
     iconBg: "bg-amber-500",
     icon: <FiAlertTriangle className="h-3.5 w-3.5" />,
   },
   info: {
     border: "border-blue-500",
-    bg: "bg-blue-50 dark:bg-blue-500/10",
+    bg: "bg-blue-50 dark:bg-blue-950",
     iconBg: "bg-blue-600",
     icon: <FiInfo className="h-3.5 w-3.5" />,
   },

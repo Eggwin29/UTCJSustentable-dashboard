@@ -1,5 +1,10 @@
-import { NavLink } from "react-router-dom";
-import type { IconType } from "react-icons";
+import {
+  NavLink,
+} from "react-router-dom";
+
+import type {
+  IconType,
+} from "react-icons";
 
 interface SidebarItemProps {
   name: string;
@@ -19,15 +24,18 @@ export default function SidebarItem({
       to={path}
       end={path === "/"}
       onClick={onClick}
-      className={({ isActive }) =>
-        `flex items-center gap-3.5 px-3.5 py-2.5 rounded-r-xl text-xs font-semibold transition-colors duration-200 ${
+      className={({
+        isActive,
+      }) =>
+        `flex items-center gap-3.5 rounded-r-xl border-l-4 px-3.5 py-2.5 text-xs font-semibold transition-colors duration-200 ${
           isActive
-            ? "bg-emerald-600/40 hover:bg-emerald-600 text-white shadow-md shadow-emerald-600/20 border-l-4"
-            : "text-slate-400 hover:text-white hover:bg-slate-800/60 hover:border-l-4"
+            ? "border-l-emerald-600 bg-slate-800/90 text-slate-100 shadow-sm shadow-black/20 hover:bg-slate-800"
+            : "border-l-transparent text-slate-400 hover:border-l-slate-600 hover:bg-slate-800/60 hover:text-slate-100"
         }`
       }
     >
-      <Icon className="w-5 h-5" />
+      <Icon className="h-5 w-5" />
+
       <span>{name}</span>
     </NavLink>
   );

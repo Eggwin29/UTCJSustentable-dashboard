@@ -31,8 +31,13 @@ const UserMenuTrigger: React.FC<UserMenuTriggerProps> = ({
     aria-expanded={open}
   >
     <div className="text-right hidden sm:block">
-      <p className="text-sm font-medium text-slate-900 leading-tight">{name}</p>
-      <p className="text-xs text-emerald-600 leading-tight">{role}</p>
+      <p className="text-sm font-medium leading-tight text-slate-900 dark:text-slate-100">
+        {name}
+      </p>
+
+      <p className="text-xs leading-tight text-emerald-600 dark:text-emerald-400">
+        {role}
+      </p>
     </div>
     <Avatar
       name={name}

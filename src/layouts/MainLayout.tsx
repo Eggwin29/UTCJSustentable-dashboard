@@ -1,29 +1,46 @@
-import { useState } from "react";
-import { Outlet } from "react-router-dom";
+import {
+  useState,
+} from "react";
 
-import { TopBar } from "@/components/layout/TopBar";
-import { Sidebar } from "@/components/layout/sidebar/Sidebar";
+import {
+  Outlet,
+} from "react-router-dom";
 
-import { useScrollToHash } from "@/hooks/useScrollToHash";
+import {
+  TopBar,
+} from "@/components/layout/TopBar";
+
+import {
+  Sidebar,
+} from "@/components/layout/sidebar/Sidebar";
+
+import {
+  useScrollToHash,
+} from "@/hooks/useScrollToHash";
 
 export default function MainLayout() {
   useScrollToHash();
 
-  const [sidebarOpen, setSidebarOpen] =
-    useState(true);
+  const [
+    sidebarOpen,
+    setSidebarOpen,
+  ] = useState(true);
 
-  const handleToggleSidebar = () => {
-    setSidebarOpen(
-      (previous) => !previous
-    );
-  };
+  const handleToggleSidebar =
+    () => {
+      setSidebarOpen(
+        (previous) =>
+          !previous
+      );
+    };
 
-  const handleCloseSidebar = () => {
-    setSidebarOpen(false);
-  };
+  const handleCloseSidebar =
+    () => {
+      setSidebarOpen(false);
+    };
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-slate-100">
+    <div className="flex h-screen flex-col overflow-hidden bg-slate-100 transition-colors duration-200 dark:bg-slate-950">
       <TopBar
         onToggleSidebar={
           handleToggleSidebar
@@ -33,7 +50,9 @@ export default function MainLayout() {
       <div className="relative flex flex-1 overflow-hidden">
         <Sidebar
           isOpen={sidebarOpen}
-          onClose={handleCloseSidebar}
+          onClose={
+            handleCloseSidebar
+          }
         />
 
         <main

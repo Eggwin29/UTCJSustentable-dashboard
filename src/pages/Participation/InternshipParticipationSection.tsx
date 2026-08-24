@@ -7,15 +7,21 @@ import {
 } from "react";
 
 import {
+  FiBookOpen,
+  FiBriefcase,
+  FiCalendar,
   FiEdit2,
+  FiInfo,
   FiPlus,
   FiRefreshCw,
   FiUsers,
 } from "react-icons/fi";
 
-import HumanCapitalForm from "@/components/forms/HumanCapitalForm";
+import StatCard from "@/components/charts/StatCard";
+import InternshipParticipationForm from "@/components/forms/InternshipParticipationForm";
 import Badge from "@/components/ui/Badge/Badge";
 import Button from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import Pagination from "@/components/ui/pagination";
 import Skeleton from "@/components/ui/skeleton/Skeleton";
 import { Table } from "@/components/ui/table";
@@ -24,18 +30,19 @@ import { useAuth } from "@/context/auth/useAuth";
 import { usePagination } from "@/hooks/usePagination";
 
 import { academicTermsService } from "@/services/academicTermsService";
-import { humanCapitalService } from "@/services/humanCapitalService";
+import { internshipParticipationService } from "@/services/internshipParticipationService";
 
 import type {
   AcademicTerm,
-  AcademicTermCode,
 } from "@/types/academicTerm";
 
 import type {
-  HumanCapitalRecord,
-} from "@/types/humanCapital";
+  AcademicLevel,
+  AcademicProgram,
+  InternshipParticipationRecord,
+} from "@/types/internshipParticipation";
 
-export default function HumanCapitalSection() {
+export default function InternshipParticipationSection() {
   const { profile } = useAuth();
 
   const canManage =
@@ -43,12 +50,19 @@ export default function HumanCapitalSection() {
     profile.role === "admin";
 
   const [records, setRecords] =
-    useState<HumanCapitalRecord[]>([]);
+    useState<
+      InternshipParticipationRecord[]
+    >([]);
 
   const [
     academicTerms,
     setAcademicTerms,
   ] = useState<AcademicTerm[]>([]);
+
+  const [
+    academicPrograms,
+    setAcademicPrograms,
+  ] = useState<AcademicProgram[]>([]);
 
   const [loading, setLoading] =
     useState(true);
@@ -64,10 +78,9 @@ export default function HumanCapitalSection() {
   const [
     editingRecord,
     setEditingRecord,
-  ] =
-    useState<HumanCapitalRecord | null>(
-      null
-    );
+  ] = useState<
+    InternshipParticipationRecord | null
+  >(null);
 
   const formContainerRef =
     useRef<HTMLDivElement>(null);
@@ -81,26 +94,32 @@ export default function HumanCapitalSection() {
         const [
           recordsData,
           termsData,
+          programsData,
         ] = await Promise.all([
-          humanCapitalService.getAll(),
+          internshipParticipationService.getAll(),
           academicTermsService.getAll(),
+          internshipParticipationService.getPrograms(),
         ]);
 
         setRecords(
-          sortHumanCapitalRecords(
+          sortInternshipRecords(
             recordsData
           )
         );
 
         setAcademicTerms(termsData);
+
+        setAcademicPrograms(
+          programsData
+        );
       } catch (error) {
         console.error(
-          "Error al cargar Capital humano:",
+          "Error al cargar Capital estadías:",
           error
         );
 
         setErrorMessage(
-          "No se pudo cargar la información de Capital humano."
+          "No se pudo cargar la información de Capital estadías."
         );
       } finally {
         setLoading(false);
@@ -111,25 +130,31 @@ export default function HumanCapitalSection() {
     let cancelled = false;
 
     Promise.all([
-      humanCapitalService.getAll(),
+      internshipParticipationService.getAll(),
       academicTermsService.getAll(),
+      internshipParticipationService.getPrograms(),
     ])
       .then(
         ([
           recordsData,
           termsData,
+          programsData,
         ]) => {
           if (cancelled) {
             return;
           }
 
           setRecords(
-            sortHumanCapitalRecords(
+            sortInternshipRecords(
               recordsData
             )
           );
 
           setAcademicTerms(termsData);
+
+          setAcademicPrograms(
+            programsData
+          );
         }
       )
       .catch((error) => {
@@ -138,12 +163,12 @@ export default function HumanCapitalSection() {
         }
 
         console.error(
-          "Error al cargar Capital humano:",
+          "Error al cargar Capital estadías:",
           error
         );
 
         setErrorMessage(
-          "No se pudo cargar la información de Capital humano."
+          "No se pudo cargar la información de Capital estadías."
         );
       })
       .finally(() => {
@@ -178,79 +203,33 @@ export default function HumanCapitalSection() {
         animationFrame
       );
     };
-  }, [
-    showForm,
-    editingRecord?.id,
-  ]);
-
-  const registeredAcademicTermIds =
-    useMemo(
-      () =>
-        new Set(
-          records.map(
-            (record) =>
-              record.academicTermId
-          )
-        ),
-      [records]
-    );
-
-  const availableAcademicTerms =
-    useMemo(
-      () =>
-        academicTerms.filter(
-          (academicTerm) =>
-            !registeredAcademicTermIds.has(
-              academicTerm.id
-            )
-        ),
-      [
-        academicTerms,
-        registeredAcademicTermIds,
-      ]
-    );
-
-  const formAcademicTerms =
-    useMemo(
-      () =>
-        academicTerms.filter(
-          (academicTerm) =>
-            academicTerm.id ===
-              editingRecord
-                ?.academicTermId ||
-            !registeredAcademicTermIds.has(
-              academicTerm.id
-            )
-        ),
-      [
-        academicTerms,
-        editingRecord,
-        registeredAcademicTermIds,
-      ]
-    );
+  }, [showForm, editingRecord?.id]);
 
   const totals = useMemo(
-    () =>
-      records.reduce(
-        (result, record) => ({
-          tmTuesday:
-            result.tmTuesday +
-            record.tmTuesday,
+    () => ({
+      records: records.length,
 
-          tvThursday:
-            result.tvThursday +
-            record.tvThursday,
+      academicTerms: new Set(
+        records.map(
+          (record) =>
+            record.academicTermId
+        )
+      ).size,
 
-          totalParticipants:
-            result.totalParticipants +
-            record.totalParticipants,
-        }),
-        {
-          tmTuesday: 0,
-          tvThursday: 0,
-          totalParticipants: 0,
-        }
+      academicPrograms: new Set(
+        records.map(
+          (record) =>
+            record.academicProgramId
+        )
+      ).size,
+
+      participants: records.reduce(
+        (total, record) =>
+          total +
+          record.participantCount,
+        0
       ),
+    }),
     [records]
   );
 
@@ -265,13 +244,18 @@ export default function HumanCapitalSection() {
     resetPage,
   } = usePagination(records);
 
+  const canCreate =
+    academicTerms.length > 0 &&
+    academicPrograms.length > 0;
+
   const handleOpenCreate = () => {
     setEditingRecord(null);
     setShowForm(true);
   };
 
   const handleOpenEdit = (
-    record: HumanCapitalRecord
+    record:
+      InternshipParticipationRecord
   ) => {
     setEditingRecord(record);
     setShowForm(true);
@@ -283,14 +267,15 @@ export default function HumanCapitalSection() {
   };
 
   const handleSaved = (
-    savedRecord: HumanCapitalRecord
+    savedRecord:
+      InternshipParticipationRecord
   ) => {
     if (!editingRecord) {
       resetPage();
     }
 
     setRecords((current) =>
-      sortHumanCapitalRecords([
+      sortInternshipRecords([
         ...current.filter(
           (record) =>
             record.id !==
@@ -305,363 +290,622 @@ export default function HumanCapitalSection() {
 
   return (
     <div className="space-y-6">
-      <section className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-slate-800 dark:text-white">
-            Capital humano
-          </h2>
+      <Card
+        variant="outlined"
+        className="relative overflow-hidden"
+      >
+        <span
+          aria-hidden="true"
+          className="
+            absolute inset-y-0
+            left-0 w-1
+            bg-violet-500
+          "
+        />
 
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Participación agregada por
-            turno y cuatrimestre.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap gap-3">
-          <Button
-            variant="outline"
-            leftIcon={
-              <FiRefreshCw />
-            }
-            onClick={() =>
-              void loadData()
-            }
-            loading={loading}
+        <Card.Body
+          className="
+            p-5 pl-6
+            sm:p-6 sm:pl-7
+          "
+        >
+          <div
+            className="
+              flex flex-col gap-5
+              lg:flex-row
+              lg:items-center
+              lg:justify-between
+            "
           >
-            Actualizar
-          </Button>
-
-          {canManage &&
-            !showForm && (
-              <Button
-                leftIcon={<FiPlus />}
-                onClick={
-                  handleOpenCreate
-                }
-                disabled={
-                  availableAcademicTerms
-                    .length === 0
-                }
-                title={
-                  availableAcademicTerms
-                    .length === 0
-                    ? "Todos los cuatrimestres ya tienen un registro."
-                    : undefined
-                }
+            <div className="flex items-start gap-3">
+              <div
+                className="
+                  flex h-11 w-11 shrink-0
+                  items-center justify-center
+                  rounded-xl
+                  bg-violet-100
+                  text-xl text-violet-700
+                  dark:bg-violet-900/40
+                  dark:text-violet-300
+                "
               >
-                Nueva participación
+                <FiBriefcase
+                  aria-hidden="true"
+                />
+              </div>
+
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2
+                    className="
+                      text-xl font-bold
+                      text-slate-900
+                      dark:text-white
+                    "
+                  >
+                    Capital estadías
+                  </h2>
+
+                  <Badge
+                    variant={
+                      canManage
+                        ? "success"
+                        : "outline"
+                    }
+                  >
+                    {canManage
+                      ? "Administración"
+                      : "Solo consulta"}
+                  </Badge>
+                </div>
+
+                <p
+                  className="
+                    mt-1 text-sm leading-6
+                    text-slate-500
+                    dark:text-slate-400
+                  "
+                >
+                  Participación por carrera,
+                  nivel académico y
+                  cuatrimestre.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <Button
+                variant="outline"
+                leftIcon={
+                  <FiRefreshCw
+                    aria-hidden="true"
+                  />
+                }
+                onClick={() =>
+                  void loadData()
+                }
+                loading={loading}
+              >
+                Actualizar
               </Button>
-            )}
+
+              {canManage &&
+                !showForm && (
+                  <Button
+                    leftIcon={
+                      <FiPlus
+                        aria-hidden="true"
+                      />
+                    }
+                    onClick={
+                      handleOpenCreate
+                    }
+                    disabled={!canCreate}
+                    title={
+                      canCreate
+                        ? undefined
+                        : "Se necesita al menos un cuatrimestre y una carrera activa."
+                    }
+                  >
+                    Nueva participación
+                  </Button>
+                )}
+            </div>
+          </div>
+
+          <div
+            className="
+              mt-5 flex gap-3
+              rounded-xl border
+              border-violet-200
+              bg-violet-50 p-4
+              dark:border-violet-900/60
+              dark:bg-violet-950/30
+            "
+          >
+            <FiInfo
+              className="
+                mt-0.5 shrink-0
+                text-violet-700
+                dark:text-violet-300
+              "
+              aria-hidden="true"
+            />
+
+            <div>
+              <p
+                className="
+                  text-sm font-semibold
+                  text-violet-800
+                  dark:text-violet-300
+                "
+              >
+                Varios registros por
+                cuatrimestre
+              </p>
+
+              <p
+                className="
+                  mt-1 text-sm leading-6
+                  text-violet-700
+                  dark:text-violet-400
+                "
+              >
+                Puedes registrar varias
+                carreras y niveles en un
+                periodo. Solo se permite una
+                coincidencia de cuatrimestre,
+                carrera y nivel académico.
+              </p>
+            </div>
+          </div>
+        </Card.Body>
+      </Card>
+
+      {showForm && canManage && (
+        <div
+          ref={formContainerRef}
+          className="scroll-mt-28"
+        >
+          <InternshipParticipationForm
+            key={
+              editingRecord?.id ??
+              "new-internship-participation"
+            }
+            academicTerms={academicTerms}
+            academicPrograms={
+              academicPrograms
+            }
+            initialRecord={
+              editingRecord
+            }
+            onSaved={handleSaved}
+            onCancel={handleCloseForm}
+          />
         </div>
-      </section>
-
-      <section className="rounded-xl border border-sky-200 bg-sky-50 p-4 dark:border-sky-900/60 dark:bg-sky-950/30">
-        <p className="text-sm font-medium text-sky-800 dark:text-sky-300">
-          Un resultado por cuatrimestre
-        </p>
-
-        <p className="mt-1 text-sm text-sky-700 dark:text-sky-400">
-          Cada registro concentra la
-          participación de T.M. Martes y
-          T.V. Jueves. Los totales se
-          calculan automáticamente y los
-          registros no se eliminan.
-        </p>
-      </section>
-
-      {!canManage && (
-        <section className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/50">
-          <p className="text-sm text-slate-600 dark:text-slate-300">
-            Tienes acceso de consulta.
-            Solo un administrador puede
-            crear o editar estos
-            resultados.
-          </p>
-        </section>
       )}
 
-      {showForm &&
-        canManage && (
-          <div
-            ref={formContainerRef}
-            className="scroll-mt-28"
-          >
-            <HumanCapitalForm
-              key={
-                editingRecord?.id ??
-                "new-human-capital"
-              }
-              academicTerms={
-                formAcademicTerms
-              }
-              initialRecord={
-                editingRecord
-              }
-              onSaved={handleSaved}
-              onCancel={
-                handleCloseForm
-              }
+      <section
+        className="
+          grid gap-4
+          sm:grid-cols-2
+          xl:grid-cols-4
+        "
+      >
+        <StatCard
+          label="Registros"
+          value={totals.records}
+          isLoading={loading}
+          accent="sky"
+          decimals={0}
+          icon={
+            <FiBriefcase
+              aria-hidden="true"
             />
-          </div>
-        )}
-
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <SummaryCard
-          label="Cuatrimestres registrados"
-          value={records.length}
-        />
-
-        <SummaryCard
-          label="T.M. Martes"
-          value={totals.tmTuesday}
-        />
-
-        <SummaryCard
-          label="T.V. Jueves"
-          value={totals.tvThursday}
-        />
-
-        <SummaryCard
-          label="Participación total"
-          value={
-            totals.totalParticipants
           }
-          highlighted
+          helper="Combinaciones registradas en el historial"
+        />
+
+        <StatCard
+          label="Cuatrimestres"
+          value={
+            totals.academicTerms
+          }
+          isLoading={loading}
+          accent="amber"
+          decimals={0}
+          icon={
+            <FiCalendar
+              aria-hidden="true"
+            />
+          }
+          helper="Periodos con participación de estadías"
+        />
+
+        <StatCard
+          label="Carreras participantes"
+          value={
+            totals.academicPrograms
+          }
+          isLoading={loading}
+          accent="violet"
+          decimals={0}
+          icon={
+            <FiBookOpen
+              aria-hidden="true"
+            />
+          }
+          helper={`${academicPrograms.length.toLocaleString(
+            "es-MX"
+          )} carreras activas disponibles`}
+        />
+
+        <StatCard
+          label="Participación total"
+          value={totals.participants}
+          isLoading={loading}
+          accent="emerald"
+          decimals={0}
+          icon={
+            <FiUsers aria-hidden="true" />
+          }
+          helper="Suma histórica de participantes registrados"
         />
       </section>
 
       {errorMessage && (
-        <section className="flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-red-900/60 dark:bg-red-950/30">
-          <p className="text-sm text-red-700 dark:text-red-300">
-            {errorMessage}
-          </p>
-
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() =>
-              void loadData()
-            }
+        <Card
+          variant="outlined"
+          className="
+            border-red-200
+            dark:border-red-900
+          "
+        >
+          <Card.Body
+            className="
+              flex flex-col gap-3 p-5
+              sm:flex-row
+              sm:items-center
+              sm:justify-between
+            "
           >
-            Reintentar
-          </Button>
-        </section>
+            <div>
+              <p
+                className="
+                  text-sm font-semibold
+                  text-red-700
+                  dark:text-red-400
+                "
+              >
+                {errorMessage}
+              </p>
+
+              <p
+                className="
+                  mt-1 text-sm
+                  text-slate-500
+                  dark:text-slate-400
+                "
+              >
+                Verifica la conexión con
+                Supabase e inténtalo de
+                nuevo.
+              </p>
+            </div>
+
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                void loadData()
+              }
+            >
+              Reintentar
+            </Button>
+          </Card.Body>
+        </Card>
       )}
 
-      <Table>
-        <Table.Head>
-          <Table.Row>
-            <Table.HeaderCell>
-              Cuatrimestre
-            </Table.HeaderCell>
+      <Card variant="outlined">
+        <Card.Header
+          className="
+            flex-row items-start
+            justify-between gap-4
+            border-b border-slate-100
+            p-5
+            dark:border-slate-800
+          "
+        >
+          <div>
+            <Card.Title>
+              Historial de Capital estadías
+            </Card.Title>
 
-            <Table.HeaderCell align="right">
-              T.M. Martes
-            </Table.HeaderCell>
+            <Card.Description className="mt-1">
+              Resultados ordenados por
+              periodo, carrera y nivel
+              académico.
+            </Card.Description>
+          </div>
 
-            <Table.HeaderCell align="right">
-              T.V. Jueves
-            </Table.HeaderCell>
+          <Badge variant="secondary">
+            {formatNumber(records.length)}
 
-            <Table.HeaderCell align="right">
-              Total
-            </Table.HeaderCell>
+            {records.length === 1
+              ? " registro"
+              : " registros"}
+          </Badge>
+        </Card.Header>
 
-            <Table.HeaderCell>
-              Observaciones
-            </Table.HeaderCell>
+        <Table
+          className="
+            rounded-none
+            border-x-0 border-b-0
+            border-t-0
+          "
+        >
+          <Table.Head>
+            <Table.Row>
+              <Table.HeaderCell>
+                Cuatrimestre
+              </Table.HeaderCell>
 
-            <Table.HeaderCell>
-              Actualización
-            </Table.HeaderCell>
+              <Table.HeaderCell>
+                Carrera
+              </Table.HeaderCell>
 
-            <Table.HeaderCell align="right">
-              Acciones
-            </Table.HeaderCell>
-          </Table.Row>
-        </Table.Head>
+              <Table.HeaderCell>
+                Nivel
+              </Table.HeaderCell>
 
-        <Table.Body>
-          {loading &&
-            Array.from({
-              length: 5,
-            }).map(
-              (_, rowIndex) => (
-                <Table.Row
-                  key={rowIndex}
-                >
-                  {Array.from({
-                    length: 7,
-                  }).map(
-                    (
-                      _,
-                      cellIndex
-                    ) => (
-                      <Table.Cell
-                        key={
-                          cellIndex
-                        }
-                        align={
-                          [
-                            1,
-                            2,
-                            3,
-                            6,
-                          ].includes(
-                            cellIndex
-                          )
-                            ? "right"
-                            : "left"
-                        }
-                      >
-                        <Skeleton
-                          variant="text"
-                          className={
+              <Table.HeaderCell align="right">
+                Participantes
+              </Table.HeaderCell>
+
+              <Table.HeaderCell>
+                Observaciones
+              </Table.HeaderCell>
+
+              <Table.HeaderCell>
+                Actualización
+              </Table.HeaderCell>
+
+              <Table.HeaderCell align="right">
+                Acciones
+              </Table.HeaderCell>
+            </Table.Row>
+          </Table.Head>
+
+          <Table.Body>
+            {loading &&
+              Array.from({
+                length: 5,
+              }).map(
+                (_, rowIndex) => (
+                  <Table.Row
+                    key={rowIndex}
+                  >
+                    {Array.from({
+                      length: 7,
+                    }).map(
+                      (
+                        _,
+                        cellIndex
+                      ) => (
+                        <Table.Cell
+                          key={cellIndex}
+                          align={
                             [
-                              1,
-                              2,
                               3,
                               6,
                             ].includes(
                               cellIndex
                             )
-                              ? "ml-auto w-20"
-                              : "w-28"
+                              ? "right"
+                              : "left"
                           }
-                        />
-                      </Table.Cell>
-                    )
-                  )}
-                </Table.Row>
-              )
-            )}
+                        >
+                          <Skeleton
+                            variant="text"
+                            className={
+                              [
+                                3,
+                                6,
+                              ].includes(
+                                cellIndex
+                              )
+                                ? "ml-auto w-20"
+                                : "w-28"
+                            }
+                          />
+                        </Table.Cell>
+                      )
+                    )}
+                  </Table.Row>
+                )
+              )}
 
-          {!loading &&
-            !errorMessage &&
-            records.length === 0 && (
-              <Table.Empty
-                colSpan={7}
-                icon={
-                  <FiUsers size={30} />
-                }
-                title="No hay participación registrada"
-                description="Agrega el primer resultado de Capital humano."
-              />
-            )}
+            {!loading &&
+              !errorMessage &&
+              records.length === 0 && (
+                <Table.Empty
+                  colSpan={7}
+                  icon={
+                    <FiBriefcase
+                      size={30}
+                    />
+                  }
+                  title="No hay participación registrada"
+                  description="Agrega el primer resultado de Capital estadías."
+                />
+              )}
 
-          {!loading &&
-            !errorMessage &&
-            paginatedRecords.map(
-              (record) => (
-                <Table.Row
-                  key={record.id}
-                >
-                  <Table.Cell>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-medium text-slate-800 dark:text-white">
+            {!loading &&
+              !errorMessage &&
+              paginatedRecords.map(
+                (record) => (
+                  <Table.Row
+                    key={record.id}
+                    clickable
+                  >
+                    <Table.Cell>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className="
+                            font-medium
+                            text-slate-800
+                            dark:text-white
+                          "
+                        >
+                          {
+                            record.academicTermLabel
+                          }
+                        </span>
+
+                        {isCurrentAcademicTerm(
+                          record,
+                          academicTerms
+                        ) && (
+                          <Badge
+                            variant="success"
+                            dot
+                          >
+                            Actual
+                          </Badge>
+                        )}
+                      </div>
+                    </Table.Cell>
+
+                    <Table.Cell>
+                      <span
+                        className="
+                          font-medium
+                          text-slate-700
+                          dark:text-slate-200
+                        "
+                      >
                         {
-                          record.academicTermLabel
+                          record.academicProgramName
                         }
                       </span>
+                    </Table.Cell>
 
-                      {isCurrentAcademicTerm(
-                        record,
-                        academicTerms
-                      ) && (
-                        <Badge
-                          variant="success"
-                          dot
-                        >
-                          Actual
-                        </Badge>
-                      )}
-                    </div>
-                  </Table.Cell>
-
-                  <Table.Cell align="right">
-                    {formatNumber(
-                      record.tmTuesday
-                    )}
-                  </Table.Cell>
-
-                  <Table.Cell align="right">
-                    {formatNumber(
-                      record.tvThursday
-                    )}
-                  </Table.Cell>
-
-                  <Table.Cell align="right">
-                    <span className="font-semibold text-slate-800 dark:text-white">
-                      {formatNumber(
-                        record.totalParticipants
-                      )}
-                    </span>
-                  </Table.Cell>
-
-                  <Table.Cell>
-                    <span
-                      className="block max-w-xs truncate"
-                      title={
-                        record.notes ??
-                        undefined
-                      }
-                    >
-                      {record.notes ??
-                        "—"}
-                    </span>
-                  </Table.Cell>
-
-                  <Table.Cell className="whitespace-nowrap">
-                    {formatDate(
-                      record.updatedAt
-                    )}
-                  </Table.Cell>
-
-                  <Table.Cell align="right">
-                    {canManage ? (
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        leftIcon={
-                          <FiEdit2 />
+                    <Table.Cell>
+                      <Badge
+                        variant={getAcademicLevelBadgeVariant(
+                          record.academicLevel
+                        )}
+                      >
+                        {
+                          record.academicLevel
                         }
-                        onClick={() =>
-                          handleOpenEdit(
-                            record
-                          )
+                      </Badge>
+                    </Table.Cell>
+
+                    <Table.Cell align="right">
+                      <span
+                        className="
+                          font-semibold
+                          text-slate-800
+                          dark:text-white
+                        "
+                      >
+                        {formatNumber(
+                          record.participantCount
+                        )}
+                      </span>
+                    </Table.Cell>
+
+                    <Table.Cell>
+                      <span
+                        className="
+                          block max-w-xs
+                          truncate
+                        "
+                        title={
+                          record.notes ??
+                          undefined
                         }
                       >
-                        Editar
-                      </Button>
-                    ) : (
-                      <Badge variant="outline">
-                        Solo lectura
-                      </Badge>
-                    )}
-                  </Table.Cell>
-                </Table.Row>
-              )
-            )}
-        </Table.Body>
-      </Table>
+                        {record.notes ?? "—"}
+                      </span>
+                    </Table.Cell>
 
-      {!loading &&
-        !errorMessage && (
-          <Pagination
-            currentPage={currentPage}
-            totalItems={totalItems}
-            pageSize={pageSize}
-            onPageChange={
-              setCurrentPage
-            }
-            onPageSizeChange={
-              setPageSize
-            }
-          />
-        )}
+                    <Table.Cell className="whitespace-nowrap">
+                      {formatDate(
+                        record.updatedAt
+                      )}
+                    </Table.Cell>
 
-      <p className="text-xs text-slate-400 dark:text-slate-500">
+                    <Table.Cell align="right">
+                      {canManage ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          leftIcon={
+                            <FiEdit2
+                              aria-hidden="true"
+                            />
+                          }
+                          onClick={() =>
+                            handleOpenEdit(
+                              record
+                            )
+                          }
+                        >
+                          Editar
+                        </Button>
+                      ) : (
+                        <Badge variant="outline">
+                          Solo lectura
+                        </Badge>
+                      )}
+                    </Table.Cell>
+                  </Table.Row>
+                )
+              )}
+          </Table.Body>
+        </Table>
+
+        {!loading &&
+          !errorMessage && (
+            <Card.Body
+              className="
+                border-t
+                border-slate-100
+                p-4
+                dark:border-slate-800
+              "
+            >
+              <Pagination
+                currentPage={currentPage}
+                totalItems={totalItems}
+                pageSize={pageSize}
+                onPageChange={
+                  setCurrentPage
+                }
+                onPageSizeChange={
+                  setPageSize
+                }
+                className="
+                  mt-0 border-0
+                  bg-slate-50
+                  shadow-none
+                  dark:bg-slate-950/40
+                "
+              />
+            </Card.Body>
+          )}
+      </Card>
+
+      <p
+        className="
+          text-xs leading-5
+          text-slate-400
+          dark:text-slate-500
+        "
+      >
         Los registros no se eliminan para
         conservar el historial de
         participación del programa.
@@ -670,67 +914,46 @@ export default function HumanCapitalSection() {
   );
 }
 
-interface SummaryCardProps {
-  label: string;
-  value: number;
-  highlighted?: boolean;
-}
-
-function SummaryCard({
-  label,
-  value,
-  highlighted = false,
-}: SummaryCardProps) {
-  return (
-    <div
-      className={
-        highlighted
-          ? "rounded-xl border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-900/60 dark:bg-emerald-950/30"
-          : "rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900"
-      }
-    >
-      <p
-        className={
-          highlighted
-            ? "text-sm font-medium text-emerald-700 dark:text-emerald-300"
-            : "text-sm font-medium text-slate-500 dark:text-slate-400"
-        }
-      >
-        {label}
-      </p>
-
-      <p
-        className={
-          highlighted
-            ? "mt-1 text-3xl font-bold text-emerald-800 dark:text-emerald-200"
-            : "mt-1 text-3xl font-bold text-slate-800 dark:text-white"
-        }
-      >
-        {formatNumber(value)}
-      </p>
-    </div>
-  );
-}
-
-function sortHumanCapitalRecords(
-  records: HumanCapitalRecord[]
-): HumanCapitalRecord[] {
+function sortInternshipRecords(
+  records:
+    InternshipParticipationRecord[]
+): InternshipParticipationRecord[] {
   return [...records].sort(
     (a, b) => {
       if (a.year !== b.year) {
         return b.year - a.year;
       }
 
-      return (
+      const termDifference =
         getTermOrder(b.term) -
-        getTermOrder(a.term)
+        getTermOrder(a.term);
+
+      if (termDifference !== 0) {
+        return termDifference;
+      }
+
+      const programDifference =
+        a.academicProgramName.localeCompare(
+          b.academicProgramName,
+          "es"
+        );
+
+      if (
+        programDifference !== 0
+      ) {
+        return programDifference;
+      }
+
+      return a.academicLevel.localeCompare(
+        b.academicLevel,
+        "es"
       );
     }
   );
 }
 
 function getTermOrder(
-  term: AcademicTermCode
+  term: unknown
 ): number {
   if (term === "E-A") {
     return 1;
@@ -740,11 +963,16 @@ function getTermOrder(
     return 2;
   }
 
-  return 3;
+  if (term === "S-D") {
+    return 3;
+  }
+
+  return 0;
 }
 
 function isCurrentAcademicTerm(
-  record: HumanCapitalRecord,
+  record:
+    InternshipParticipationRecord,
   academicTerms: AcademicTerm[]
 ): boolean {
   return academicTerms.some(
@@ -753,6 +981,26 @@ function isCurrentAcademicTerm(
         record.academicTermId &&
       academicTerm.isCurrent
   );
+}
+
+function getAcademicLevelBadgeVariant(
+  academicLevel: AcademicLevel
+):
+  | "primary"
+  | "secondary"
+  | "warning" {
+  if (academicLevel === "TSU") {
+    return "primary";
+  }
+
+  if (
+    academicLevel ===
+    "Licenciatura"
+  ) {
+    return "secondary";
+  }
+
+  return "warning";
 }
 
 function formatNumber(

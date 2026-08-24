@@ -430,18 +430,18 @@ export const GLOBAL_SEARCH_ITEMS:
       roles: ["admin"],
     },
     {
-  id: "profile",
-  title: "Mi perfil",
-  description:
-    "Consulta y actualiza los datos de tu cuenta.",
-  path: "/perfil",
-  category: "Navegación",
-  keywords: [
-    "perfil",
-    "cuenta",
-    "nombre",
-    "contraseña",
-    "seguridad",
-  ],
-},
+      id: "profile",
+      title: "Mi perfil",
+      description:
+        "Consulta y actualiza los datos de tu cuenta.",
+      path: "/perfil",
+      category: "Navegación",
+      keywords: [
+        "perfil",
+        "cuenta",
+        "nombre",
+        "contraseña",
+        "seguridad",
+      ],
+    },
   ];

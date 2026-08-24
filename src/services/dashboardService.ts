@@ -1,28 +1,75 @@
-import { supabase } from "@/lib/supabase";
-import { formatAcademicTerm } from "@/services/academicTermsService";
+import {
+  supabase,
+} from "@/lib/supabase";
 
-import type { CollectionListItem } from "@/types/collection";
+import {
+  academicTermsService,
+  formatAcademicTerm,
+} from "@/services/academicTermsService";
+
+import type {
+  CollectionListItem,
+} from "@/types/collection";
+
+export interface DashboardMaterialSummary {
+  id: string;
+  name: string;
+  kilograms: number;
+  percentage: number;
+}
 
 export interface DashboardSummary {
   totalKilograms: number;
   totalCo2: number;
   collectionsCount: number;
   activeMaterialsCount: number;
+
   humanCapitalParticipants: number;
   internshipParticipants: number;
-  recentCollections: CollectionListItem[];
+
+  currentAcademicTerm: {
+    id: string;
+    label: string;
+    startDate: string;
+    endDate: string;
+  } | null;
+
+  currentTermKilograms: number;
+
+  currentTermCollectionsCount:
+    number;
+
+  currentTermParticipants: number;
+
+  topMaterials:
+    DashboardMaterialSummary[];
+
+  recentCollections:
+    CollectionListItem[];
+
+  lastUpdatedAt: string | null;
+}
+
+interface MaterialAccumulator {
+  id: string;
+  name: string;
+  kilograms: number;
 }
 
 export const dashboardService = {
-  async getSummary(): Promise<DashboardSummary> {
+  async getSummary():
+    Promise<DashboardSummary> {
     const [
       collectionsResult,
       activeMaterialsResult,
       humanCapitalResult,
       internshipResult,
+      currentAcademicTerm,
     ] = await Promise.all([
       supabase
-        .from("waste_collections")
+        .from(
+          "waste_collections"
+        )
         .select(`
           id,
           year,
@@ -60,22 +107,36 @@ export const dashboardService = {
 
       supabase
         .from("human_capital")
-        .select("tm_tuesday, tv_thursday"),
+        .select(
+          "academic_term_id, tm_tuesday, tv_thursday"
+        ),
 
       supabase
-        .from("internship_participation")
-        .select("participant_count"),
+        .from(
+          "internship_participation"
+        )
+        .select(
+          "academic_term_id, participant_count"
+        ),
+
+      academicTermsService.getCurrent(),
     ]);
 
-    if (collectionsResult.error) {
+    if (
+      collectionsResult.error
+    ) {
       throw collectionsResult.error;
     }
 
-    if (activeMaterialsResult.error) {
+    if (
+      activeMaterialsResult.error
+    ) {
       throw activeMaterialsResult.error;
     }
 
-    if (humanCapitalResult.error) {
+    if (
+      humanCapitalResult.error
+    ) {
       throw humanCapitalResult.error;
     }
 
@@ -87,41 +148,160 @@ export const dashboardService = {
     let totalCo2 = 0;
     let collectionsCount = 0;
 
-    const recentCollections: CollectionListItem[] = [];
+    let currentTermKilograms = 0;
+
+    let currentTermCollectionsCount =
+      0;
+
+    const recentCollections:
+      CollectionListItem[] = [];
+
+    const materialTotals =
+      new Map<
+        string,
+        MaterialAccumulator
+      >();
 
     const humanCapitalParticipants =
       humanCapitalResult.data.reduce(
         (total, record) =>
           total +
-          Number(record.tm_tuesday) +
-          Number(record.tv_thursday),
+          Number(
+            record.tm_tuesday
+          ) +
+          Number(
+            record.tv_thursday
+          ),
         0
       );
 
     const internshipParticipants =
       internshipResult.data.reduce(
         (total, record) =>
-          total + Number(record.participant_count),
+          total +
+          Number(
+            record.participant_count
+          ),
         0
       );
 
-    for (const record of collectionsResult.data) {
-      const kilograms = Number(record.kilograms);
+    const currentHumanCapitalParticipants =
+      currentAcademicTerm
+        ? humanCapitalResult.data.reduce(
+            (
+              total,
+              record
+            ) => {
+              if (
+                record.academic_term_id !==
+                currentAcademicTerm.id
+              ) {
+                return total;
+              }
 
-      const co2Factor = Number(
-        record.co2_factor_applied
-      );
+              return (
+                total +
+                Number(
+                  record.tm_tuesday
+                ) +
+                Number(
+                  record.tv_thursday
+                )
+              );
+            },
+            0
+          )
+        : 0;
 
-      totalKilograms += kilograms;
-      totalCo2 += kilograms * co2Factor;
+    const currentInternshipParticipants =
+      currentAcademicTerm
+        ? internshipResult.data.reduce(
+            (
+              total,
+              record
+            ) =>
+              record.academic_term_id ===
+              currentAcademicTerm.id
+                ? total +
+                  Number(
+                    record.participant_count
+                  )
+                : total,
+            0
+          )
+        : 0;
 
-      if (record.record_type !== "collection") {
+    for (
+      const record of
+      collectionsResult.data
+    ) {
+      const kilograms =
+        Number(record.kilograms);
+
+      const co2Factor =
+        Number(
+          record.co2_factor_applied
+        );
+
+      totalKilograms +=
+        kilograms;
+
+      totalCo2 +=
+        kilograms * co2Factor;
+
+      const materialId =
+        record.material_id;
+
+      const materialName =
+        record.materials?.name ??
+        "Sin material";
+
+      const accumulatedMaterial =
+        materialTotals.get(
+          materialId
+        );
+
+      if (
+        accumulatedMaterial
+      ) {
+        accumulatedMaterial.kilograms +=
+          kilograms;
+      } else {
+        materialTotals.set(
+          materialId,
+          {
+            id: materialId,
+            name: materialName,
+            kilograms,
+          }
+        );
+      }
+
+      if (
+        record.record_type !==
+        "collection"
+      ) {
         continue;
       }
 
       collectionsCount += 1;
 
-      if (recentCollections.length >= 5) {
+      if (
+        currentAcademicTerm &&
+        record.academic_term_id ===
+          currentAcademicTerm.id
+      ) {
+        currentTermKilograms +=
+          kilograms;
+
+        currentTermCollectionsCount +=
+          1;
+      }
+
+      if (
+        recentCollections.length >=
+        5
+      ) {
         continue;
       }
 
@@ -136,38 +316,116 @@ export const dashboardService = {
 
       recentCollections.push({
         id: record.id,
-        date: record.collection_date,
-        academicTermId: record.academic_term_id,
-        materialId: record.material_id,
+
+        date:
+          record.collection_date,
+
+        academicTermId:
+          record.academic_term_id,
+
+        materialId:
+          record.material_id,
+
         kilograms,
-        location: record.location,
+
+        location:
+          record.location,
+
         notes: record.notes,
-        createdBy: record.created_by,
-        createdAt: record.created_at,
-        updatedAt: record.updated_at,
 
-        academicTermLabel: record.academic_terms
-          ? formatAcademicTerm(
-              record.academic_terms.term,
-              record.academic_terms.year
-            )
-          : "Sin cuatrimestre",
+        createdBy:
+          record.created_by,
 
-        materialName:
-          record.materials?.name ??
-          "Sin material",
+        createdAt:
+          record.created_at,
+
+        updatedAt:
+          record.updated_at,
+
+        academicTermLabel:
+          record.academic_terms
+            ? formatAcademicTerm(
+                record
+                  .academic_terms
+                  .term,
+
+                record
+                  .academic_terms
+                  .year
+              )
+            : "Sin cuatrimestre",
+
+        materialName,
       });
     }
+
+    const topMaterials =
+      Array.from(
+        materialTotals.values()
+      )
+        .sort(
+          (
+            first,
+            second
+          ) =>
+            second.kilograms -
+            first.kilograms
+        )
+        .slice(0, 5)
+        .map((material) => ({
+          ...material,
+
+          percentage:
+            totalKilograms > 0
+              ? (material.kilograms /
+                  totalKilograms) *
+                100
+              : 0,
+        }));
 
     return {
       totalKilograms,
       totalCo2,
       collectionsCount,
+
       activeMaterialsCount:
-        activeMaterialsResult.count ?? 0,
+        activeMaterialsResult.count ??
+        0,
+
       humanCapitalParticipants,
       internshipParticipants,
+
+      currentAcademicTerm:
+        currentAcademicTerm
+          ? {
+              id:
+                currentAcademicTerm.id,
+
+              label:
+                currentAcademicTerm.label,
+
+              startDate:
+                currentAcademicTerm.startDate,
+
+              endDate:
+                currentAcademicTerm.endDate,
+            }
+          : null,
+
+      currentTermKilograms,
+
+      currentTermCollectionsCount,
+
+      currentTermParticipants:
+        currentHumanCapitalParticipants +
+        currentInternshipParticipants,
+
+      topMaterials,
       recentCollections,
+
+      lastUpdatedAt:
+        collectionsResult.data[0]
+          ?.updated_at ?? null,
     };
   },
 };

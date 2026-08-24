@@ -1,1 +1,35 @@
 @import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  color-scheme: light;
+  background-color: #f1f5f9;
+}
+
+html.dark {
+  color-scheme: dark;
+  background-color: #020617;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background-color: inherit;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+* {
+  scrollbar-color: #94a3b8 transparent;
+}
+
+html.dark * {
+  scrollbar-color: #475569 transparent;
+}
