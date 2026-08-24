@@ -15,6 +15,10 @@ export interface AuthContextValue {
   loading: boolean;
   profileLoading: boolean;
   profileError: Error | null;
+  
+  replaceProfile: (
+  profile: Profile
+) => void;
 }
 
 export const AuthContext = createContext<

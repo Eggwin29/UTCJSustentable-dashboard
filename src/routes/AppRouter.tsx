@@ -16,6 +16,7 @@ import Participation from "@/pages/Participation/Participation";
 import Reports from "@/pages/Reports/Reports";
 import Settings from "@/pages/Settings/Settings";
 import Users from "@/pages/Users/Users";
+import Profile from "@/pages/Profile/Profile";
 
 export const router =
   createBrowserRouter([
@@ -33,6 +34,7 @@ export const router =
           path: "/",
           element:
             <MainLayout />,
+            
 
           children: [
             {
@@ -62,12 +64,17 @@ export const router =
                 <Reports />,
             },
             {
+              path: "perfil",
+              element: <Profile />,
+            },
+            {
               path:
                 "design-system",
 
               element:
                 <DesignSystem />,
             },
+            
 
             {
               element:

@@ -12,6 +12,7 @@ import {
 
 import CollectionForm from "@/components/forms/CollectionForm";
 import Button from "@/components/ui/button";
+import Pagination from "@/components/ui/pagination";
 
 import {
   useConfirmModal,
@@ -23,21 +24,12 @@ import {
   useToast,
 } from "@/components/ui/toast/toast";
 
-import {
-  useAuth,
-} from "@/context/auth/useAuth";
+import { useAuth } from "@/context/auth/useAuth";
+import { usePagination } from "@/hooks/usePagination";
 
-import {
-  academicTermsService,
-} from "@/services/academicTermsService";
-
-import {
-  collectionsService,
-} from "@/services/collectionsService";
-
-import {
-  materialsService,
-} from "@/services/materialsService";
+import { academicTermsService } from "@/services/academicTermsService";
+import { collectionsService } from "@/services/collectionsService";
+import { materialsService } from "@/services/materialsService";
 
 import type {
   AcademicTerm,
@@ -74,20 +66,16 @@ export default function Collections() {
     setAcademicTerms,
   ] = useState<AcademicTerm[]>([]);
 
-  const [
-    loading,
-    setLoading,
-  ] = useState(true);
+  const [loading, setLoading] =
+    useState(true);
 
   const [
     errorMessage,
     setErrorMessage,
   ] = useState("");
 
-  const [
-    showForm,
-    setShowForm,
-  ] = useState(false);
+  const [showForm, setShowForm] =
+    useState(false);
 
   const [
     editingCollection,
@@ -108,9 +96,16 @@ export default function Collections() {
         academicTerm.isCurrent
     ) ?? null;
 
-  // =====================================================
-  // CARGAR INFORMACIÓN
-  // =====================================================
+  const {
+    currentPage,
+    pageSize,
+    totalItems,
+    paginatedItems:
+      paginatedCollections,
+    setCurrentPage,
+    setPageSize,
+    resetPage,
+  } = usePagination(collections);
 
   useEffect(() => {
     let cancelled = false;
@@ -126,9 +121,7 @@ export default function Collections() {
           academicTermsData,
         ] = await Promise.all([
           collectionsService.getAll(),
-
           materialsService.getActive(),
-
           academicTermsService.getAll(),
         ]);
 
@@ -170,18 +163,10 @@ export default function Collections() {
     };
   }, []);
 
-  // =====================================================
-  // ABRIR FORMULARIO DE CREACIÓN
-  // =====================================================
-
   const handleOpenCreate = () => {
     setEditingCollection(null);
     setShowForm(true);
   };
-
-  // =====================================================
-  // ABRIR FORMULARIO DE EDICIÓN
-  // =====================================================
 
   const handleOpenEdit = (
     collection: CollectionListItem
@@ -190,18 +175,10 @@ export default function Collections() {
     setShowForm(true);
   };
 
-  // =====================================================
-  // CERRAR FORMULARIO
-  // =====================================================
-
   const handleCloseForm = () => {
     setShowForm(false);
     setEditingCollection(null);
   };
-
-  // =====================================================
-  // GUARDAR CREACIÓN O EDICIÓN
-  // =====================================================
 
   const handleSaved = (
     collection: CollectionListItem
@@ -219,14 +196,12 @@ export default function Collections() {
         collection,
         ...current,
       ]);
+
+      resetPage();
     }
 
     handleCloseForm();
   };
-
-  // =====================================================
-  // ELIMINAR RECOLECCIÓN
-  // =====================================================
 
   const handleDelete = async (
     collection: CollectionListItem
@@ -296,10 +271,6 @@ export default function Collections() {
     }
   };
 
-  // =====================================================
-  // CARGANDO
-  // =====================================================
-
   if (loading) {
     return (
       <div className="p-6">
@@ -309,10 +280,6 @@ export default function Collections() {
       </div>
     );
   }
-
-  // =====================================================
-  // ERROR
-  // =====================================================
 
   if (errorMessage) {
     return (
@@ -326,8 +293,6 @@ export default function Collections() {
 
   return (
     <div className="space-y-6">
-      {/* ENCABEZADO */}
-
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 dark:text-white">
@@ -350,8 +315,6 @@ export default function Collections() {
         )}
       </div>
 
-      {/* FORMULARIO */}
-
       {showForm && user && (
         <CollectionForm
           key={
@@ -370,8 +333,6 @@ export default function Collections() {
           onCancel={handleCloseForm}
         />
       )}
-
-      {/* RESUMEN */}
 
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
@@ -405,8 +366,6 @@ export default function Collections() {
           </p>
         </div>
       </div>
-
-      {/* TABLA */}
 
       <div>
         <div className="mb-3">
@@ -464,7 +423,7 @@ export default function Collections() {
                 description="Registra la primera recolección para comenzar a generar información."
               />
             ) : (
-              collections.map(
+              paginatedCollections.map(
                 (collection) => {
                   const canManage =
                     profile?.role ===
@@ -576,6 +535,18 @@ export default function Collections() {
             )}
           </Table.Body>
         </Table>
+
+        <Pagination
+          currentPage={currentPage}
+          totalItems={totalItems}
+          pageSize={pageSize}
+          onPageChange={
+            setCurrentPage
+          }
+          onPageSizeChange={
+            setPageSize
+          }
+        />
       </div>
     </div>
   );

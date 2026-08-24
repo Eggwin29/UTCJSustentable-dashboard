@@ -2,8 +2,8 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
-  useRef
 } from "react";
 
 import {
@@ -16,20 +16,15 @@ import {
 import HumanCapitalForm from "@/components/forms/HumanCapitalForm";
 import Badge from "@/components/ui/Badge/Badge";
 import Button from "@/components/ui/button";
+import Pagination from "@/components/ui/pagination";
 import Skeleton from "@/components/ui/skeleton/Skeleton";
 import { Table } from "@/components/ui/table";
 
-import {
-  useAuth,
-} from "@/context/auth/useAuth";
+import { useAuth } from "@/context/auth/useAuth";
+import { usePagination } from "@/hooks/usePagination";
 
-import {
-  academicTermsService,
-} from "@/services/academicTermsService";
-
-import {
-  humanCapitalService,
-} from "@/services/humanCapitalService";
+import { academicTermsService } from "@/services/academicTermsService";
+import { humanCapitalService } from "@/services/humanCapitalService";
 
 import type {
   AcademicTerm,
@@ -47,34 +42,24 @@ export default function HumanCapitalSection() {
     profile?.active === true &&
     profile.role === "admin";
 
-  const [
-    records,
-    setRecords,
-  ] =
-    useState<HumanCapitalRecord[]>(
-      []
-    );
+  const [records, setRecords] =
+    useState<HumanCapitalRecord[]>([]);
 
   const [
     academicTerms,
     setAcademicTerms,
-  ] =
-    useState<AcademicTerm[]>([]);
+  ] = useState<AcademicTerm[]>([]);
 
-  const [
-    loading,
-    setLoading,
-  ] = useState(true);
+  const [loading, setLoading] =
+    useState(true);
 
   const [
     errorMessage,
     setErrorMessage,
   ] = useState("");
 
-  const [
-    showForm,
-    setShowForm,
-  ] = useState(false);
+  const [showForm, setShowForm] =
+    useState(false);
 
   const [
     editingRecord,
@@ -83,8 +68,9 @@ export default function HumanCapitalSection() {
     useState<HumanCapitalRecord | null>(
       null
     );
-    const formContainerRef =
-  useRef<HTMLDivElement>(null);
+
+  const formContainerRef =
+    useRef<HTMLDivElement>(null);
 
   const loadData =
     useCallback(async () => {
@@ -97,7 +83,6 @@ export default function HumanCapitalSection() {
           termsData,
         ] = await Promise.all([
           humanCapitalService.getAll(),
-
           academicTermsService.getAll(),
         ]);
 
@@ -107,9 +92,7 @@ export default function HumanCapitalSection() {
           )
         );
 
-        setAcademicTerms(
-          termsData
-        );
+        setAcademicTerms(termsData);
       } catch (error) {
         console.error(
           "Error al cargar Capital humano:",
@@ -129,7 +112,6 @@ export default function HumanCapitalSection() {
 
     Promise.all([
       humanCapitalService.getAll(),
-
       academicTermsService.getAll(),
     ])
       .then(
@@ -147,9 +129,7 @@ export default function HumanCapitalSection() {
             )
           );
 
-          setAcademicTerms(
-            termsData
-          );
+          setAcademicTerms(termsData);
         }
       )
       .catch((error) => {
@@ -178,30 +158,30 @@ export default function HumanCapitalSection() {
   }, []);
 
   useEffect(() => {
-  if (!showForm) {
-    return;
-  }
+    if (!showForm) {
+      return;
+    }
 
-  const animationFrame =
-    window.requestAnimationFrame(
-      () => {
-        formContainerRef.current
-          ?.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-          });
-      }
-    );
+    const animationFrame =
+      window.requestAnimationFrame(
+        () => {
+          formContainerRef.current
+            ?.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+            });
+        }
+      );
 
-  return () => {
-    window.cancelAnimationFrame(
-      animationFrame
-    );
-  };
-}, [
-  showForm,
-  editingRecord?.id,
-]);
+    return () => {
+      window.cancelAnimationFrame(
+        animationFrame
+      );
+    };
+  }, [
+    showForm,
+    editingRecord?.id,
+  ]);
 
   const registeredAcademicTermIds =
     useMemo(
@@ -238,7 +218,6 @@ export default function HumanCapitalSection() {
             academicTerm.id ===
               editingRecord
                 ?.academicTermId ||
-
             !registeredAcademicTermIds.has(
               academicTerm.id
             )
@@ -275,6 +254,17 @@ export default function HumanCapitalSection() {
     [records]
   );
 
+  const {
+    currentPage,
+    pageSize,
+    totalItems,
+    paginatedItems:
+      paginatedRecords,
+    setCurrentPage,
+    setPageSize,
+    resetPage,
+  } = usePagination(records);
+
   const handleOpenCreate = () => {
     setEditingRecord(null);
     setShowForm(true);
@@ -295,6 +285,10 @@ export default function HumanCapitalSection() {
   const handleSaved = (
     savedRecord: HumanCapitalRecord
   ) => {
+    if (!editingRecord) {
+      resetPage();
+    }
+
     setRecords((current) =>
       sortHumanCapitalRecords([
         ...current.filter(
@@ -302,7 +296,6 @@ export default function HumanCapitalSection() {
             record.id !==
             savedRecord.id
         ),
-
         savedRecord,
       ])
     );
@@ -341,9 +334,7 @@ export default function HumanCapitalSection() {
           {canManage &&
             !showForm && (
               <Button
-                leftIcon={
-                  <FiPlus />
-                }
+                leftIcon={<FiPlus />}
                 onClick={
                   handleOpenCreate
                 }
@@ -390,29 +381,29 @@ export default function HumanCapitalSection() {
       )}
 
       {showForm &&
-  canManage && (
-    <div
-      ref={formContainerRef}
-      className="scroll-mt-28"
-    >
-      <HumanCapitalForm
-        key={
-          editingRecord?.id ??
-          "new-human-capital"
-        }
-        academicTerms={
-          formAcademicTerms
-        }
-        initialRecord={
-          editingRecord
-        }
-        onSaved={handleSaved}
-        onCancel={
-          handleCloseForm
-        }
-      />
-    </div>
-  )}
+        canManage && (
+          <div
+            ref={formContainerRef}
+            className="scroll-mt-28"
+          >
+            <HumanCapitalForm
+              key={
+                editingRecord?.id ??
+                "new-human-capital"
+              }
+              academicTerms={
+                formAcademicTerms
+              }
+              initialRecord={
+                editingRecord
+              }
+              onSaved={handleSaved}
+              onCancel={
+                handleCloseForm
+              }
+            />
+          </div>
+        )}
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <SummaryCard
@@ -503,7 +494,7 @@ export default function HumanCapitalSection() {
                     length: 7,
                   }).map(
                     (
-                      __,
+                      _,
                       cellIndex
                     ) => (
                       <Table.Cell
@@ -547,14 +538,11 @@ export default function HumanCapitalSection() {
 
           {!loading &&
             !errorMessage &&
-            records.length ===
-              0 && (
+            records.length === 0 && (
               <Table.Empty
                 colSpan={7}
                 icon={
-                  <FiUsers
-                    size={30}
-                  />
+                  <FiUsers size={30} />
                 }
                 title="No hay participación registrada"
                 description="Agrega el primer resultado de Capital humano."
@@ -563,7 +551,7 @@ export default function HumanCapitalSection() {
 
           {!loading &&
             !errorMessage &&
-            records.map(
+            paginatedRecords.map(
               (record) => (
                 <Table.Row
                   key={record.id}
@@ -657,6 +645,21 @@ export default function HumanCapitalSection() {
             )}
         </Table.Body>
       </Table>
+
+      {!loading &&
+        !errorMessage && (
+          <Pagination
+            currentPage={currentPage}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            onPageChange={
+              setCurrentPage
+            }
+            onPageSizeChange={
+              setPageSize
+            }
+          />
+        )}
 
       <p className="text-xs text-slate-400 dark:text-slate-500">
         Los registros no se eliminan para

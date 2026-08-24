@@ -154,6 +154,11 @@ export function AuthProvider({
         loading,
         profileLoading,
         profileError,
+        replaceProfile: (
+          nextProfile
+        ) => {
+          setProfile(nextProfile);
+        },
       }}
     >
       {children}

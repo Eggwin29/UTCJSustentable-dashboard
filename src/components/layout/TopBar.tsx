@@ -44,6 +44,11 @@ export const TopBar: React.FC<TopBarProps> = ({
       ? "Administrador"
       : "Usuario";
 
+  const canAccessAdmin =
+    !profileLoading &&
+    profile?.active === true &&
+    profile.role === "admin";
+
   const handleSignOut = async () => {
     try {
       await authService.signOut();
@@ -115,6 +120,7 @@ export const TopBar: React.FC<TopBarProps> = ({
         <UserMenu
           name={displayName}
           role={displayRole}
+          canAccessAdmin={canAccessAdmin}
           organization="UTCJ Sustentable"
           onNavigate={(path) => {
             navigate(path);

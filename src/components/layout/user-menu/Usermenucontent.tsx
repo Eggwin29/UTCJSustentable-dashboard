@@ -1,6 +1,14 @@
-// UserMenuContent.tsx
 import React from "react";
-import { FiUser, FiBell, FiUsers, FiSettings, FiMoon, FiLogOut } from "react-icons/fi";
+
+import {
+  FiBell,
+  FiLogOut,
+  FiMoon,
+  FiSettings,
+  FiUser,
+  FiUsers,
+} from "react-icons/fi";
+
 import UserMenuHeader from "./UserMenuHeader";
 import UserMenuSection from "./UserMenuSection";
 import UserMenuItem from "./UserMenuItem";
@@ -9,23 +17,23 @@ import UserMenuToggle from "./UserMenuToggle";
 interface UserMenuContentProps {
   name: string;
   role: string;
+  canAccessAdmin: boolean;
   organization?: string;
   avatarUrl?: string;
   darkMode: boolean;
-  onToggleDarkMode: (checked: boolean) => void;
+  onToggleDarkMode: (
+    checked: boolean
+  ) => void;
   onNavigate: (path: string) => void;
   onSignOut: () => void;
 }
 
-/**
- * Contenido puro del menu: encabezado + secciones de opciones.
- * No decide si se muestra como dropdown flotante o pantalla
- * completa — eso lo hacen UserMenuDesktopPanel / UserMenuMobilePanel,
- * que simplemente envuelven este mismo contenido.
- */
-const UserMenuContent: React.FC<UserMenuContentProps> = ({
+const UserMenuContent: React.FC<
+  UserMenuContentProps
+> = ({
   name,
   role,
+  canAccessAdmin,
   organization,
   avatarUrl,
   darkMode,
@@ -45,34 +53,56 @@ const UserMenuContent: React.FC<UserMenuContentProps> = ({
       <UserMenuItem
         icon={<FiUser size={16} />}
         label="Mi perfil"
-        onClick={() => onNavigate("/perfil")}
+        onClick={() =>
+          onNavigate("/perfil")
+        }
       />
+
       <UserMenuItem
         icon={<FiBell size={16} />}
         label="Notificaciones"
-        onClick={() => onNavigate("/notificaciones")}
+        onClick={() =>
+          onNavigate(
+            "/notificaciones"
+          )
+        }
       />
     </UserMenuSection>
 
-    <UserMenuSection>
-      <UserMenuItem
-        icon={<FiUsers size={16} />}
-        label="Usuarios"
-        onClick={() => onNavigate("/users")}
-      />
-      <UserMenuItem
-        icon={<FiSettings size={16} />}
-        label="Configuración"
-        onClick={() => onNavigate("/settings")}
-      />
-    </UserMenuSection>
+    {canAccessAdmin && (
+      <UserMenuSection>
+        <UserMenuItem
+          icon={
+            <FiUsers size={16} />
+          }
+          label="Usuarios"
+          onClick={() =>
+            onNavigate("/users")
+          }
+        />
+
+        <UserMenuItem
+          icon={
+            <FiSettings
+              size={16}
+            />
+          }
+          label="Configuración"
+          onClick={() =>
+            onNavigate("/settings")
+          }
+        />
+      </UserMenuSection>
+    )}
 
     <UserMenuSection>
       <UserMenuToggle
         icon={<FiMoon size={16} />}
         label="Modo oscuro"
         checked={darkMode}
-        onChange={onToggleDarkMode}
+        onChange={
+          onToggleDarkMode
+        }
       />
     </UserMenuSection>
 

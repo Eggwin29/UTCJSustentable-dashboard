@@ -40,4 +40,34 @@ export const authService = {
 
     return user;
   },
+
+  async changePassword(
+  email: string,
+  currentPassword: string,
+  newPassword: string
+) {
+  const { error: signInError } =
+    await supabase.auth
+      .signInWithPassword({
+        email,
+        password:
+          currentPassword,
+      });
+
+  if (signInError) {
+    throw new Error(
+      "La contraseña actual no es correcta."
+    );
+  }
+
+  const { error } =
+    await supabase.auth
+      .updateUser({
+        password: newPassword,
+      });
+
+  if (error) {
+    throw error;
+  }
+},
 };

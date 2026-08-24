@@ -7,41 +7,35 @@ import {
 } from "react";
 
 import {
-  FiBriefcase,
   FiEdit2,
   FiPlus,
   FiRefreshCw,
+  FiUsers,
 } from "react-icons/fi";
 
-import InternshipParticipationForm from "@/components/forms/InternshipParticipationForm";
+import HumanCapitalForm from "@/components/forms/HumanCapitalForm";
 import Badge from "@/components/ui/Badge/Badge";
 import Button from "@/components/ui/button";
+import Pagination from "@/components/ui/pagination";
 import Skeleton from "@/components/ui/skeleton/Skeleton";
 import { Table } from "@/components/ui/table";
 
-import {
-  useAuth,
-} from "@/context/auth/useAuth";
+import { useAuth } from "@/context/auth/useAuth";
+import { usePagination } from "@/hooks/usePagination";
 
-import {
-  academicTermsService,
-} from "@/services/academicTermsService";
-
-import {
-  internshipParticipationService,
-} from "@/services/internshipParticipationService";
+import { academicTermsService } from "@/services/academicTermsService";
+import { humanCapitalService } from "@/services/humanCapitalService";
 
 import type {
   AcademicTerm,
+  AcademicTermCode,
 } from "@/types/academicTerm";
 
 import type {
-  AcademicLevel,
-  AcademicProgram,
-  InternshipParticipationRecord,
-} from "@/types/internshipParticipation";
+  HumanCapitalRecord,
+} from "@/types/humanCapital";
 
-export default function InternshipParticipationSection() {
+export default function HumanCapitalSection() {
   const { profile } = useAuth();
 
   const canManage =
@@ -49,19 +43,12 @@ export default function InternshipParticipationSection() {
     profile.role === "admin";
 
   const [records, setRecords] =
-    useState<
-      InternshipParticipationRecord[]
-    >([]);
+    useState<HumanCapitalRecord[]>([]);
 
   const [
     academicTerms,
     setAcademicTerms,
   ] = useState<AcademicTerm[]>([]);
-
-  const [
-    academicPrograms,
-    setAcademicPrograms,
-  ] = useState<AcademicProgram[]>([]);
 
   const [loading, setLoading] =
     useState(true);
@@ -78,9 +65,9 @@ export default function InternshipParticipationSection() {
     editingRecord,
     setEditingRecord,
   ] =
-    useState<
-      InternshipParticipationRecord | null
-    >(null);
+    useState<HumanCapitalRecord | null>(
+      null
+    );
 
   const formContainerRef =
     useRef<HTMLDivElement>(null);
@@ -94,36 +81,26 @@ export default function InternshipParticipationSection() {
         const [
           recordsData,
           termsData,
-          programsData,
         ] = await Promise.all([
-          internshipParticipationService.getAll(),
-
+          humanCapitalService.getAll(),
           academicTermsService.getAll(),
-
-          internshipParticipationService.getPrograms(),
         ]);
 
         setRecords(
-          sortInternshipRecords(
+          sortHumanCapitalRecords(
             recordsData
           )
         );
 
-        setAcademicTerms(
-          termsData
-        );
-
-        setAcademicPrograms(
-          programsData
-        );
+        setAcademicTerms(termsData);
       } catch (error) {
         console.error(
-          "Error al cargar Capital estadías:",
+          "Error al cargar Capital humano:",
           error
         );
 
         setErrorMessage(
-          "No se pudo cargar la información de Capital estadías."
+          "No se pudo cargar la información de Capital humano."
         );
       } finally {
         setLoading(false);
@@ -134,35 +111,25 @@ export default function InternshipParticipationSection() {
     let cancelled = false;
 
     Promise.all([
-      internshipParticipationService.getAll(),
-
+      humanCapitalService.getAll(),
       academicTermsService.getAll(),
-
-      internshipParticipationService.getPrograms(),
     ])
       .then(
         ([
           recordsData,
           termsData,
-          programsData,
         ]) => {
           if (cancelled) {
             return;
           }
 
           setRecords(
-            sortInternshipRecords(
+            sortHumanCapitalRecords(
               recordsData
             )
           );
 
-          setAcademicTerms(
-            termsData
-          );
-
-          setAcademicPrograms(
-            programsData
-          );
+          setAcademicTerms(termsData);
         }
       )
       .catch((error) => {
@@ -171,12 +138,12 @@ export default function InternshipParticipationSection() {
         }
 
         console.error(
-          "Error al cargar Capital estadías:",
+          "Error al cargar Capital humano:",
           error
         );
 
         setErrorMessage(
-          "No se pudo cargar la información de Capital estadías."
+          "No se pudo cargar la información de Capital humano."
         );
       })
       .finally(() => {
@@ -196,13 +163,15 @@ export default function InternshipParticipationSection() {
     }
 
     const animationFrame =
-      window.requestAnimationFrame(() => {
-        formContainerRef.current
-          ?.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-          });
-      });
+      window.requestAnimationFrame(
+        () => {
+          formContainerRef.current
+            ?.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+            });
+        }
+      );
 
     return () => {
       window.cancelAnimationFrame(
@@ -214,41 +183,87 @@ export default function InternshipParticipationSection() {
     editingRecord?.id,
   ]);
 
-  const totals = useMemo(
-    () => ({
-      records:
-        records.length,
-
-      academicTerms:
+  const registeredAcademicTermIds =
+    useMemo(
+      () =>
         new Set(
           records.map(
             (record) =>
               record.academicTermId
           )
-        ).size,
-
-      academicPrograms:
-        new Set(
-          records.map(
-            (record) =>
-              record.academicProgramId
-          )
-        ).size,
-
-      participants:
-        records.reduce(
-          (total, record) =>
-            total +
-            record.participantCount,
-          0
         ),
-    }),
+      [records]
+    );
+
+  const availableAcademicTerms =
+    useMemo(
+      () =>
+        academicTerms.filter(
+          (academicTerm) =>
+            !registeredAcademicTermIds.has(
+              academicTerm.id
+            )
+        ),
+      [
+        academicTerms,
+        registeredAcademicTermIds,
+      ]
+    );
+
+  const formAcademicTerms =
+    useMemo(
+      () =>
+        academicTerms.filter(
+          (academicTerm) =>
+            academicTerm.id ===
+              editingRecord
+                ?.academicTermId ||
+            !registeredAcademicTermIds.has(
+              academicTerm.id
+            )
+        ),
+      [
+        academicTerms,
+        editingRecord,
+        registeredAcademicTermIds,
+      ]
+    );
+
+  const totals = useMemo(
+    () =>
+      records.reduce(
+        (result, record) => ({
+          tmTuesday:
+            result.tmTuesday +
+            record.tmTuesday,
+
+          tvThursday:
+            result.tvThursday +
+            record.tvThursday,
+
+          totalParticipants:
+            result.totalParticipants +
+            record.totalParticipants,
+        }),
+        {
+          tmTuesday: 0,
+          tvThursday: 0,
+          totalParticipants: 0,
+        }
+      ),
     [records]
   );
 
-  const canCreate =
-    academicTerms.length > 0 &&
-    academicPrograms.length > 0;
+  const {
+    currentPage,
+    pageSize,
+    totalItems,
+    paginatedItems:
+      paginatedRecords,
+    setCurrentPage,
+    setPageSize,
+    resetPage,
+  } = usePagination(records);
 
   const handleOpenCreate = () => {
     setEditingRecord(null);
@@ -256,8 +271,7 @@ export default function InternshipParticipationSection() {
   };
 
   const handleOpenEdit = (
-    record:
-      InternshipParticipationRecord
+    record: HumanCapitalRecord
   ) => {
     setEditingRecord(record);
     setShowForm(true);
@@ -269,17 +283,19 @@ export default function InternshipParticipationSection() {
   };
 
   const handleSaved = (
-    savedRecord:
-      InternshipParticipationRecord
+    savedRecord: HumanCapitalRecord
   ) => {
+    if (!editingRecord) {
+      resetPage();
+    }
+
     setRecords((current) =>
-      sortInternshipRecords([
+      sortHumanCapitalRecords([
         ...current.filter(
           (record) =>
             record.id !==
             savedRecord.id
         ),
-
         savedRecord,
       ])
     );
@@ -292,13 +308,12 @@ export default function InternshipParticipationSection() {
       <section className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-xl font-bold text-slate-800 dark:text-white">
-            Capital estadías
+            Capital humano
           </h2>
 
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Participación por carrera,
-            nivel académico y
-            cuatrimestre.
+            Participación agregada por
+            turno y cuatrimestre.
           </p>
         </div>
 
@@ -319,17 +334,19 @@ export default function InternshipParticipationSection() {
           {canManage &&
             !showForm && (
               <Button
-                leftIcon={
-                  <FiPlus />
-                }
+                leftIcon={<FiPlus />}
                 onClick={
                   handleOpenCreate
                 }
-                disabled={!canCreate}
+                disabled={
+                  availableAcademicTerms
+                    .length === 0
+                }
                 title={
-                  canCreate
-                    ? undefined
-                    : "Se necesita al menos un cuatrimestre y una carrera activa."
+                  availableAcademicTerms
+                    .length === 0
+                    ? "Todos los cuatrimestres ya tienen un registro."
+                    : undefined
                 }
               >
                 Nueva participación
@@ -340,17 +357,15 @@ export default function InternshipParticipationSection() {
 
       <section className="rounded-xl border border-sky-200 bg-sky-50 p-4 dark:border-sky-900/60 dark:bg-sky-950/30">
         <p className="text-sm font-medium text-sky-800 dark:text-sky-300">
-          Varios registros por
-          cuatrimestre
+          Un resultado por cuatrimestre
         </p>
 
         <p className="mt-1 text-sm text-sky-700 dark:text-sky-400">
-          Un cuatrimestre puede incluir
-          varias carreras y niveles. Solo
-          puede existir un registro por
-          la misma combinación de
-          cuatrimestre, carrera y nivel
-          académico.
+          Cada registro concentra la
+          participación de T.M. Martes y
+          T.V. Jueves. Los totales se
+          calculan automáticamente y los
+          registros no se eliminan.
         </p>
       </section>
 
@@ -371,23 +386,18 @@ export default function InternshipParticipationSection() {
             ref={formContainerRef}
             className="scroll-mt-28"
           >
-            <InternshipParticipationForm
+            <HumanCapitalForm
               key={
                 editingRecord?.id ??
-                "new-internship-participation"
+                "new-human-capital"
               }
               academicTerms={
-                academicTerms
-              }
-              academicPrograms={
-                academicPrograms
+                formAcademicTerms
               }
               initialRecord={
                 editingRecord
               }
-              onSaved={
-                handleSaved
-              }
+              onSaved={handleSaved}
               onCancel={
                 handleCloseForm
               }
@@ -397,28 +407,24 @@ export default function InternshipParticipationSection() {
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <SummaryCard
-          label="Registros"
-          value={totals.records}
+          label="Cuatrimestres registrados"
+          value={records.length}
         />
 
         <SummaryCard
-          label="Cuatrimestres"
-          value={
-            totals.academicTerms
-          }
+          label="T.M. Martes"
+          value={totals.tmTuesday}
         />
 
         <SummaryCard
-          label="Carreras participantes"
-          value={
-            totals.academicPrograms
-          }
+          label="T.V. Jueves"
+          value={totals.tvThursday}
         />
 
         <SummaryCard
           label="Participación total"
           value={
-            totals.participants
+            totals.totalParticipants
           }
           highlighted
         />
@@ -449,16 +455,16 @@ export default function InternshipParticipationSection() {
               Cuatrimestre
             </Table.HeaderCell>
 
-            <Table.HeaderCell>
-              Carrera
-            </Table.HeaderCell>
-
-            <Table.HeaderCell>
-              Nivel
+            <Table.HeaderCell align="right">
+              T.M. Martes
             </Table.HeaderCell>
 
             <Table.HeaderCell align="right">
-              Participantes
+              T.V. Jueves
+            </Table.HeaderCell>
+
+            <Table.HeaderCell align="right">
+              Total
             </Table.HeaderCell>
 
             <Table.HeaderCell>
@@ -488,7 +494,7 @@ export default function InternshipParticipationSection() {
                     length: 7,
                   }).map(
                     (
-                      __,
+                      _,
                       cellIndex
                     ) => (
                       <Table.Cell
@@ -497,6 +503,8 @@ export default function InternshipParticipationSection() {
                         }
                         align={
                           [
+                            1,
+                            2,
                             3,
                             6,
                           ].includes(
@@ -510,6 +518,8 @@ export default function InternshipParticipationSection() {
                           variant="text"
                           className={
                             [
+                              1,
+                              2,
                               3,
                               6,
                             ].includes(
@@ -528,23 +538,20 @@ export default function InternshipParticipationSection() {
 
           {!loading &&
             !errorMessage &&
-            records.length ===
-              0 && (
+            records.length === 0 && (
               <Table.Empty
                 colSpan={7}
                 icon={
-                  <FiBriefcase
-                    size={30}
-                  />
+                  <FiUsers size={30} />
                 }
                 title="No hay participación registrada"
-                description="Agrega el primer resultado de Capital estadías."
+                description="Agrega el primer resultado de Capital humano."
               />
             )}
 
           {!loading &&
             !errorMessage &&
-            records.map(
+            paginatedRecords.map(
               (record) => (
                 <Table.Row
                   key={record.id}
@@ -571,30 +578,22 @@ export default function InternshipParticipationSection() {
                     </div>
                   </Table.Cell>
 
-                  <Table.Cell>
-                    <span className="font-medium text-slate-700 dark:text-slate-200">
-                      {
-                        record.academicProgramName
-                      }
-                    </span>
+                  <Table.Cell align="right">
+                    {formatNumber(
+                      record.tmTuesday
+                    )}
                   </Table.Cell>
 
-                  <Table.Cell>
-                    <Badge
-                      variant={getAcademicLevelBadgeVariant(
-                        record.academicLevel
-                      )}
-                    >
-                      {
-                        record.academicLevel
-                      }
-                    </Badge>
+                  <Table.Cell align="right">
+                    {formatNumber(
+                      record.tvThursday
+                    )}
                   </Table.Cell>
 
                   <Table.Cell align="right">
                     <span className="font-semibold text-slate-800 dark:text-white">
                       {formatNumber(
-                        record.participantCount
+                        record.totalParticipants
                       )}
                     </span>
                   </Table.Cell>
@@ -647,9 +646,24 @@ export default function InternshipParticipationSection() {
         </Table.Body>
       </Table>
 
+      {!loading &&
+        !errorMessage && (
+          <Pagination
+            currentPage={currentPage}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            onPageChange={
+              setCurrentPage
+            }
+            onPageSizeChange={
+              setPageSize
+            }
+          />
+        )}
+
       <p className="text-xs text-slate-400 dark:text-slate-500">
-        Los registros no se eliminan
-        para conservar el historial de
+        Los registros no se eliminan para
+        conservar el historial de
         participación del programa.
       </p>
     </div>
@@ -698,46 +712,25 @@ function SummaryCard({
   );
 }
 
-function sortInternshipRecords(
-  records:
-    InternshipParticipationRecord[]
-): InternshipParticipationRecord[] {
+function sortHumanCapitalRecords(
+  records: HumanCapitalRecord[]
+): HumanCapitalRecord[] {
   return [...records].sort(
     (a, b) => {
       if (a.year !== b.year) {
         return b.year - a.year;
       }
 
-      const termDifference =
+      return (
         getTermOrder(b.term) -
-        getTermOrder(a.term);
-
-      if (termDifference !== 0) {
-        return termDifference;
-      }
-
-      const programDifference =
-        a.academicProgramName.localeCompare(
-          b.academicProgramName,
-          "es"
-        );
-
-      if (
-        programDifference !== 0
-      ) {
-        return programDifference;
-      }
-
-      return a.academicLevel.localeCompare(
-        b.academicLevel,
-        "es"
+        getTermOrder(a.term)
       );
     }
   );
 }
 
 function getTermOrder(
-  term: unknown
+  term: AcademicTermCode
 ): number {
   if (term === "E-A") {
     return 1;
@@ -747,17 +740,11 @@ function getTermOrder(
     return 2;
   }
 
-  if (term === "S-D") {
-    return 3;
-  }
-
-  return 0;
+  return 3;
 }
 
 function isCurrentAcademicTerm(
-  record:
-    InternshipParticipationRecord,
-
+  record: HumanCapitalRecord,
   academicTerms: AcademicTerm[]
 ): boolean {
   return academicTerms.some(
@@ -766,26 +753,6 @@ function isCurrentAcademicTerm(
         record.academicTermId &&
       academicTerm.isCurrent
   );
-}
-
-function getAcademicLevelBadgeVariant(
-  academicLevel: AcademicLevel
-):
-  | "primary"
-  | "secondary"
-  | "warning" {
-  if (academicLevel === "TSU") {
-    return "primary";
-  }
-
-  if (
-    academicLevel ===
-    "Licenciatura"
-  ) {
-    return "secondary";
-  }
-
-  return "warning";
 }
 
 function formatNumber(

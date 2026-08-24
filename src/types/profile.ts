@@ -13,3 +13,8 @@ export interface UpdateProfileAccessInput {
   role: UserRole;
   active: boolean;
 }
+
+export interface UpdateOwnProfileInput {
+  firstName: string;
+  lastName: string;
+}
