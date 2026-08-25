@@ -5,11 +5,52 @@
 :root {
   color-scheme: light;
   background-color: #f1f5f9;
+
+  --chart-grid-color: #e2e8f0;
+  --chart-axis-color: #64748b;
+  --chart-label-color: #475569;
+  --chart-label-line-color: #cbd5e1;
+
+  --chart-pie-border: #fff;
+  
+
+  --chart-cursor-fill:
+    rgba(5, 150, 105, 0.1);
+
+  --chart-tooltip-background:
+    rgba(255, 255, 255, 0.98);
+
+  --chart-tooltip-border: #cbd5e1;
+  --chart-tooltip-title: #0f172a;
+
+  --chart-tooltip-shadow:
+    0 14px 32px
+    rgba(15, 23, 42, 0.18);
 }
 
 html.dark {
   color-scheme: dark;
   background-color: #020617;
+
+  --chart-grid-color: #334155;
+  --chart-axis-color: #94a3b8;
+  --chart-label-color: #cbd5e1;
+  --chart-label-line-color: #64748b;
+
+  --chart-pie-border: #0f172b;
+
+  --chart-cursor-fill:
+    rgba(16, 185, 129, 0.12);
+
+  --chart-tooltip-background:
+    rgba(15, 23, 42, 0.98);
+
+  --chart-tooltip-border: #334155;
+  --chart-tooltip-title: #f8fafc;
+
+  --chart-tooltip-shadow:
+    0 16px 36px
+    rgba(0, 0, 0, 0.45);
 }
 
 body {
@@ -27,9 +68,138 @@ select {
 }
 
 * {
-  scrollbar-color: #94a3b8 transparent;
+  scrollbar-color:
+    #94a3b8 transparent;
 }
 
 html.dark * {
-  scrollbar-color: #475569 transparent;
+  scrollbar-color:
+    #475569 transparent;
+}
+
+/* =====================================================
+   RECHARTS
+   ===================================================== */
+
+/*
+ * Mantiene la tarjeta informativa en una posición estable.
+ * Recharts normalmente la desplaza junto con el cursor y
+ * aplica una transición que puede producir un efecto de rastro.
+ */
+.recharts-wrapper
+.recharts-tooltip-wrapper {
+  top: -12px !important;
+  right: 4px !important;
+  bottom: auto !important;
+  left: auto !important;
+
+  z-index: 20;
+
+  transform: none !important;
+  transition: none !important;
+
+  pointer-events: none !important;
+  will-change: auto !important;
+}
+
+/* Tarjeta de información */
+.recharts-default-tooltip {
+  padding: 10px 12px !important;
+
+  border:
+    1px solid
+    var(
+      --chart-tooltip-border
+    ) !important;
+
+  border-radius: 12px !important;
+
+  background:
+    var(
+      --chart-tooltip-background
+    ) !important;
+
+  box-shadow:
+    var(
+      --chart-tooltip-shadow
+    ) !important;
+
+  color:
+    var(
+      --chart-tooltip-title
+    ) !important;
+
+  backdrop-filter: blur(10px);
+}
+
+.recharts-default-tooltip
+.recharts-tooltip-label {
+  margin-bottom: 4px !important;
+
+  color:
+    var(
+      --chart-tooltip-title
+    ) !important;
+
+  font-weight: 600;
+}
+
+.recharts-default-tooltip
+.recharts-tooltip-item {
+  padding-block: 2px !important;
+}
+
+/*
+ * Resaltado de la barra o categoría activa.
+ * Sustituye el rectángulo gris predeterminado.
+ */
+.recharts-tooltip-cursor {
+  fill:
+    var(
+      --chart-cursor-fill
+    ) !important;
+}
+
+/* Cuadrícula de gráficas */
+.recharts-cartesian-grid line {
+  stroke:
+    var(
+      --chart-grid-color
+    ) !important;
+}
+
+/* Textos de los ejes */
+.recharts-cartesian-axis-tick-value {
+  fill:
+    var(
+      --chart-axis-color
+    ) !important;
+}
+
+/* Etiquetas de barras y gráficas circulares */
+.recharts-label {
+  fill:
+    var(
+      --chart-label-color
+    ) !important;
+}
+
+/* Líneas de las etiquetas circulares */
+.recharts-pie-label-line {
+  stroke:
+    var(
+      --chart-label-line-color
+    ) !important;
+}
+
+/* Bordes de gráficas circulares */
+.recharts-pie-sector
+.recharts-sector {
+  stroke:
+    var(
+      --chart-pie-border
+    ) !important;
+
+  stroke-width: 1.5px !important;
+  stroke-linejoin: round;
 }

@@ -60,7 +60,7 @@ export default function PersonalTotalPorCuatrimestreChart({
     >
       <ResponsiveContainer
         width="100%"
-        height={260}
+        height={300}
         debounce={150}
       >
         <PieChart>

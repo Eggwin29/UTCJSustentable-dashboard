@@ -1,10 +1,34 @@
-// components/ui/dropdown/Dropdown.tsx
-import React, { useId, useRef, useState, useEffect } from "react";
-import { cn } from "@/utils/cn";
-import { sizeConfig, getContainerClasses } from "../input/inputConfig";
-import type { InputSize, InputVariant } from "../input/inputConfig";
+import React, {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react";
+
+import {
+  createPortal,
+} from "react-dom";
+
+import {
+  useDropdownValue,
+} from "@/hooks/useDropdownValue";
+
+import {
+  cn,
+} from "@/utils/cn";
+
 import InputLabel from "../input/InputLabel";
-import { useDropdownValue } from "@/hooks/useDropdownValue";
+
+import {
+  getContainerClasses,
+  sizeConfig,
+} from "../input/inputConfig";
+
+import type {
+  InputSize,
+  InputVariant,
+} from "../input/inputConfig";
 
 export interface SelectOption {
   value: string | number;
@@ -22,195 +46,618 @@ export interface SelectProps {
   leftIcon?: React.ReactNode;
   value?: string | number;
   defaultValue?: string | number;
-  onChange?: (value: string | number) => void;
+  onChange?: (
+    value: string | number
+  ) => void;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
   id?: string;
 }
 
-const Dropdown: React.FC<SelectProps> = ({
-  options,
-  label,
-  helperText,
-  error,
-  size = "md",
-  variant = "outline",
-  leftIcon,
-  value,
-  defaultValue,
-  onChange,
-  placeholder = "Selecciona una opción",
-  disabled,
-  className,
-  id,
-}) => {
-  const generatedId = useId();
-  const dropdownId = id ?? generatedId;
-  const hasError = Boolean(error);
-  const config = sizeConfig[size];
+interface MenuPosition {
+  top: number;
+  left: number;
+  width: number;
+  maxHeight: number;
+  placement: "top" | "bottom";
+}
 
-  const rootRef = useRef<HTMLDivElement>(null);
-  const [isOpen, setIsOpen] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(-1);
+const MENU_GAP = 8;
+const VIEWPORT_PADDING = 12;
+const MAX_MENU_HEIGHT = 240;
+const MIN_MENU_HEIGHT = 72;
 
-  const { currentValue, selectValue, hasValue } = useDropdownValue({
+const Dropdown:
+  React.FC<SelectProps> = ({
+    options,
+    label,
+    helperText,
+    error,
+    size = "md",
+    variant = "outline",
+    leftIcon,
     value,
     defaultValue,
     onChange,
-  });
+    placeholder =
+      "Selecciona una opción",
+    disabled,
+    className,
+    id,
+  }) => {
+    const generatedId = useId();
 
-  const selectedOption = options.find((opt) => opt.value === currentValue);
+    const dropdownId =
+      id ?? generatedId;
 
-  // Cierra al hacer click afuera
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
+    const listboxId =
+      `${dropdownId}-listbox`;
+
+    const hasError =
+      Boolean(error);
+
+    const config =
+      sizeConfig[size];
+
+    const rootRef =
+      useRef<HTMLDivElement>(
+        null
+      );
+
+    const triggerRef =
+      useRef<HTMLButtonElement>(
+        null
+      );
+
+    const menuRef =
+      useRef<HTMLUListElement>(
+        null
+      );
+
+    const [
+      isOpen,
+      setIsOpen,
+    ] = useState(false);
+
+    const [
+      activeIndex,
+      setActiveIndex,
+    ] = useState(-1);
+
+    const [
+      menuPosition,
+      setMenuPosition,
+    ] =
+      useState<MenuPosition | null>(
+        null
+      );
+
+    const {
+      currentValue,
+      selectValue,
+      hasValue,
+    } = useDropdownValue({
+      value,
+      defaultValue,
+      onChange,
+    });
+
+    const selectedOption =
+      options.find(
+        (option) =>
+          option.value ===
+          currentValue
+      );
+
+    const updateMenuPosition =
+      useCallback(() => {
+        const trigger =
+          triggerRef.current;
+
+        if (!trigger) {
+          return;
+        }
+
+        const rect =
+          trigger.getBoundingClientRect();
+
+        const availableBelow =
+          window.innerHeight -
+          rect.bottom -
+          MENU_GAP -
+          VIEWPORT_PADDING;
+
+        const availableAbove =
+          rect.top -
+          MENU_GAP -
+          VIEWPORT_PADDING;
+
+        const placement =
+          availableBelow <
+            MAX_MENU_HEIGHT &&
+          availableAbove >
+            availableBelow
+            ? "top"
+            : "bottom";
+
+        const availableHeight =
+          placement === "top"
+            ? availableAbove
+            : availableBelow;
+
+        const maxHeight =
+          Math.max(
+            MIN_MENU_HEIGHT,
+            Math.min(
+              MAX_MENU_HEIGHT,
+              availableHeight
+            )
+          );
+
+        const width =
+          Math.min(
+            rect.width,
+            window.innerWidth -
+              VIEWPORT_PADDING *
+                2
+          );
+
+        const left =
+          Math.min(
+            Math.max(
+              rect.left,
+              VIEWPORT_PADDING
+            ),
+            window.innerWidth -
+              width -
+              VIEWPORT_PADDING
+          );
+
+        setMenuPosition({
+          top:
+            placement === "top"
+              ? rect.top -
+                MENU_GAP
+              : rect.bottom +
+                MENU_GAP,
+          left,
+          width,
+          maxHeight,
+          placement,
+        });
+      }, []);
+
+    useEffect(() => {
+      function handleClickOutside(
+        event: MouseEvent
+      ) {
+        const target =
+          event.target as Node;
+
+        const clickedTrigger =
+          rootRef.current?.contains(
+            target
+          );
+
+        const clickedMenu =
+          menuRef.current?.contains(
+            target
+          );
+
+        if (
+          !clickedTrigger &&
+          !clickedMenu
+        ) {
+          setIsOpen(false);
+        }
       }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
-  const openMenu = () => {
-    if (disabled) return;
-    setActiveIndex(options.findIndex((opt) => opt.value === currentValue));
-    setIsOpen(true);
-  };
+      document.addEventListener(
+        "mousedown",
+        handleClickOutside
+      );
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (disabled) return;
+      return () => {
+        document.removeEventListener(
+          "mousedown",
+          handleClickOutside
+        );
+      };
+    }, []);
 
-    if (!isOpen && (e.key === "Enter" || e.key === " " || e.key === "ArrowDown")) {
-      e.preventDefault();
-      openMenu();
-      return;
-    }
+    useEffect(() => {
+      if (!isOpen) {
+        return;
+      }
 
-    if (!isOpen) return;
+      let animationFrame = 0;
 
-    if (e.key === "Escape") {
+      const requestPositionUpdate =
+        () => {
+          window.cancelAnimationFrame(
+            animationFrame
+          );
+
+          animationFrame =
+            window.requestAnimationFrame(
+              updateMenuPosition
+            );
+        };
+
+      window.addEventListener(
+        "resize",
+        requestPositionUpdate
+      );
+
+      document.addEventListener(
+        "scroll",
+        requestPositionUpdate,
+        true
+      );
+
+      return () => {
+        window.cancelAnimationFrame(
+          animationFrame
+        );
+
+        window.removeEventListener(
+          "resize",
+          requestPositionUpdate
+        );
+
+        document.removeEventListener(
+          "scroll",
+          requestPositionUpdate,
+          true
+        );
+      };
+    }, [
+      isOpen,
+      updateMenuPosition,
+    ]);
+
+    const openMenu = () => {
+      if (
+        disabled ||
+        options.length === 0
+      ) {
+        return;
+      }
+
+      setActiveIndex(
+        options.findIndex(
+          (option) =>
+            option.value ===
+            currentValue
+        )
+      );
+
+      updateMenuPosition();
+      setIsOpen(true);
+    };
+
+    const closeMenu = () => {
       setIsOpen(false);
-    } else if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setActiveIndex((prev) => Math.min(prev + 1, options.length - 1));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setActiveIndex((prev) => Math.max(prev - 1, 0));
-    } else if (e.key === "Enter" && activeIndex >= 0) {
-      e.preventDefault();
-      selectValue(options[activeIndex].value);
-      setIsOpen(false);
-    }
-  };
+    };
 
-  return (
-    <div className="w-full flex flex-col gap-1.5" ref={rootRef}>
-      {label && (
-        <InputLabel htmlFor={dropdownId} label={label} hasError={hasError} disabled={disabled} />
-      )}
+    const handleSelect = (
+      option: SelectOption
+    ) => {
+      selectValue(option.value);
+      closeMenu();
 
-      <div className="relative w-full">
-        <button
-          type="button"
-          id={dropdownId}
-          onClick={() => (isOpen ? setIsOpen(false) : openMenu())}
-          onKeyDown={handleKeyDown}
-          disabled={disabled}
-          role="combobox"
-          aria-expanded={isOpen}
-          aria-haspopup="listbox"
-          aria-invalid={hasError}
-          aria-describedby={helperText || error ? `${dropdownId}-description` : undefined}
-          className={cn(
-            "peer relative w-full flex items-center text-left transition-colors duration-200",
-            getContainerClasses(variant, hasError),
-            config.height,
-            disabled && "opacity-50 cursor-not-allowed",
-            !disabled && "cursor-pointer",
-            className
-          )}
-        >
-          {leftIcon && (
-            <span className="pl-3 flex items-center text-slate-400 dark:text-slate-500">
-              {leftIcon}
-            </span>
-          )}
+      triggerRef.current?.focus();
+    };
 
-          <span
-          className={cn(
-            "flex-1 truncate",
-            config.text,
-            config.inputPadding,
-            leftIcon ? "pl-2" : undefined,
-            "pr-2",
-            hasValue ? "text-slate-900 dark:text-white" : "text-slate-400 dark:text-slate-500"
-          )}
-        >
-          {selectedOption ? selectedOption.label : placeholder}
-        </span>
+    const handleKeyDown = (
+      event: React.KeyboardEvent
+    ) => {
+      if (disabled) {
+        return;
+      }
 
-          <span
+      if (
+        !isOpen &&
+        (
+          event.key === "Enter" ||
+          event.key === " " ||
+          event.key ===
+            "ArrowDown"
+        )
+      ) {
+        event.preventDefault();
+        openMenu();
+        return;
+      }
+
+      if (!isOpen) {
+        return;
+      }
+
+      if (
+        event.key === "Escape"
+      ) {
+        event.preventDefault();
+        closeMenu();
+        return;
+      }
+
+      if (
+        event.key ===
+        "ArrowDown"
+      ) {
+        event.preventDefault();
+
+        setActiveIndex(
+          (previous) =>
+            Math.min(
+              previous + 1,
+              options.length - 1
+            )
+        );
+
+        return;
+      }
+
+      if (
+        event.key === "ArrowUp"
+      ) {
+        event.preventDefault();
+
+        setActiveIndex(
+          (previous) =>
+            Math.max(
+              previous - 1,
+              0
+            )
+        );
+
+        return;
+      }
+
+      if (
+        event.key === "Enter" &&
+        activeIndex >= 0
+      ) {
+        event.preventDefault();
+
+        handleSelect(
+          options[activeIndex]
+        );
+      }
+    };
+
+    const dropdownMenu =
+      isOpen && menuPosition
+        ? createPortal(
+            <ul
+              ref={menuRef}
+              id={listboxId}
+              role="listbox"
+              aria-label={
+                label ??
+                placeholder
+              }
+              style={{
+                top:
+                  menuPosition.top,
+                left:
+                  menuPosition.left,
+                width:
+                  menuPosition.width,
+                maxHeight:
+                  menuPosition.maxHeight,
+              }}
+              className={cn(
+                "fixed z-[300] overflow-y-auto overscroll-contain rounded-xl border border-slate-200 bg-white py-1 shadow-2xl shadow-slate-950/15",
+                "dark:border-slate-700 dark:bg-slate-800 dark:shadow-black/40",
+                menuPosition.placement ===
+                  "top" &&
+                  "-translate-y-full origin-bottom",
+                menuPosition.placement ===
+                  "bottom" &&
+                  "origin-top"
+              )}
+            >
+              {options.map(
+                (
+                  option,
+                  index
+                ) => {
+                  const isSelected =
+                    option.value ===
+                    currentValue;
+
+                  const isActive =
+                    index ===
+                    activeIndex;
+
+                  return (
+                    <li
+                      key={
+                        option.value
+                      }
+                      id={`${listboxId}-option-${index}`}
+                      role="option"
+                      aria-selected={
+                        isSelected
+                      }
+                      onMouseEnter={() =>
+                        setActiveIndex(
+                          index
+                        )
+                      }
+                      onClick={() =>
+                        handleSelect(
+                          option
+                        )
+                      }
+                      className={cn(
+                        "flex cursor-pointer items-center gap-2.5 px-3 py-2 text-sm transition-colors",
+                        isSelected
+                          ? "bg-emerald-50 font-medium text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400"
+                          : "text-slate-700 dark:text-slate-200",
+                        isActive &&
+                          !isSelected &&
+                          "bg-slate-100 dark:bg-slate-700/60"
+                      )}
+                    >
+                      {option.icon && (
+                        <span className="shrink-0 text-slate-400 dark:text-slate-500">
+                          {
+                            option.icon
+                          }
+                        </span>
+                      )}
+
+                      <span className="min-w-0 flex-1 truncate">
+                        {
+                          option.label
+                        }
+                      </span>
+                    </li>
+                  );
+                }
+              )}
+            </ul>,
+            document.body
+          )
+        : null;
+
+    return (
+      <div
+        ref={rootRef}
+        className="flex w-full flex-col gap-1.5"
+      >
+        {label && (
+          <InputLabel
+            htmlFor={dropdownId}
+            label={label}
+            hasError={hasError}
+            disabled={disabled}
+          />
+        )}
+
+        <div className="relative w-full">
+          <button
+            ref={triggerRef}
+            type="button"
+            id={dropdownId}
+            onClick={() =>
+              isOpen
+                ? closeMenu()
+                : openMenu()
+            }
+            onKeyDown={
+              handleKeyDown
+            }
+            disabled={disabled}
+            role="combobox"
+            aria-expanded={
+              isOpen
+            }
+            aria-haspopup="listbox"
+            aria-controls={
+              listboxId
+            }
+            aria-activedescendant={
+              isOpen &&
+              activeIndex >= 0
+                ? `${listboxId}-option-${activeIndex}`
+                : undefined
+            }
+            aria-invalid={
+              hasError
+            }
+            aria-describedby={
+              helperText || error
+                ? `${dropdownId}-description`
+                : undefined
+            }
             className={cn(
-              "pr-3 flex items-center text-slate-400 dark:text-slate-500 transition-transform duration-200",
-              isOpen && "rotate-180"
+              "peer relative flex w-full items-center text-left transition-colors duration-200",
+              getContainerClasses(
+                variant,
+                hasError
+              ),
+              config.height,
+              disabled &&
+                "cursor-not-allowed opacity-50",
+              !disabled &&
+                "cursor-pointer",
+              className
             )}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-            </svg>
-          </span>
-        </button>
+            {leftIcon && (
+              <span className="flex items-center pl-3 text-slate-400 dark:text-slate-500">
+                {leftIcon}
+              </span>
+            )}
 
-        {isOpen && (
-          <ul
-            role="listbox"
-            className="absolute z-50 mt-2 w-full max-h-60 overflow-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg py-1 animate-in fade-in slide-in-from-top-1 duration-150"
+            <span
+              className={cn(
+                "flex-1 truncate",
+                config.text,
+                config.inputPadding,
+                leftIcon
+                  ? "pl-2"
+                  : undefined,
+                "pr-2",
+                hasValue
+                  ? "text-slate-900 dark:text-white"
+                  : "text-slate-400 dark:text-slate-500"
+              )}
+            >
+              {selectedOption
+                ? selectedOption.label
+                : placeholder}
+            </span>
+
+            <span
+              className={cn(
+                "flex items-center pr-3 text-slate-400 transition-transform duration-200 dark:text-slate-500",
+                isOpen &&
+                  "rotate-180"
+              )}
+            >
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </span>
+          </button>
+        </div>
+
+        {(helperText ||
+          error) && (
+          <p
+            id={`${dropdownId}-description`}
+            className={cn(
+              "px-1 text-xs transition-colors",
+              hasError
+                ? "text-red-500"
+                : "text-slate-500 dark:text-slate-400"
+            )}
           >
-            {options.map((opt, index) => {
-              const isSelected = opt.value === currentValue;
-              const isActive = index === activeIndex;
-              return (
-                <li
-                  key={opt.value}
-                  role="option"
-                  aria-selected={isSelected}
-                  onMouseEnter={() => setActiveIndex(index)}
-                  onClick={() => {
-                    selectValue(opt.value);
-                    setIsOpen(false);
-                  }}
-                  className={cn(
-                    "flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer transition-colors",
-                    isSelected
-                      ? "bg-emerald-50 text-emerald-700 font-medium dark:bg-emerald-500/10 dark:text-emerald-400"
-                      : "text-slate-700 dark:text-slate-200",
-                    isActive && !isSelected && "bg-slate-100 dark:bg-slate-700/60"
-                  )}
-                >
-                  {opt.icon && <span className="text-slate-400 dark:text-slate-500">{opt.icon}</span>}
-                  {opt.label}
-                </li>
-              );
-            })}
-          </ul>
+            {error ||
+              helperText}
+          </p>
         )}
-      </div>
 
-      {(helperText || error) && (
-        <p
-          id={`${dropdownId}-description`}
-          className={cn(
-            "text-xs px-1 transition-colors",
-            hasError ? "text-red-500" : "text-slate-500 dark:text-slate-400"
-          )}
-        >
-          {error || helperText}
-        </p>
-      )}
-    </div>
-  );
-};
+        {dropdownMenu}
+      </div>
+    );
+  };
 
 export default Dropdown;

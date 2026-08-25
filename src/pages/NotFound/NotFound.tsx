@@ -1,14 +1,10 @@
-import type {
-  IconType,
-} from "react-icons";
+
 
 import {
   FiArrowLeft,
-  FiBarChart2,
   FiHome,
-  FiLayers,
   FiMapPin,
-  FiUsers,
+
 } from "react-icons/fi";
 
 import {
@@ -18,43 +14,9 @@ import {
 
 import Button from "@/components/ui/button";
 
-interface Shortcut {
-  label: string;
-  description: string;
-  path: string;
-  icon: IconType;
-  color: string;
-}
 
-const shortcuts: Shortcut[] = [
-  {
-    label: "Colecciones",
-    description:
-      "Consulta y administra las recolecciones.",
-    path: "/collections",
-    icon: FiLayers,
-    color:
-      "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
-  },
-  {
-    label: "Participación",
-    description:
-      "Revisa Capital humano y Capital estadías.",
-    path: "/participation",
-    icon: FiUsers,
-    color:
-      "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300",
-  },
-  {
-    label: "Reportes",
-    description:
-      "Explora indicadores, tablas y gráficas.",
-    path: "/reports",
-    icon: FiBarChart2,
-    color:
-      "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300",
-  },
-];
+
+
 
 export default function NotFound() {
   const location = useLocation();
@@ -175,54 +137,7 @@ export default function NotFound() {
             </div>
           </div>
 
-          <div className="relative border-t border-slate-100 bg-slate-50/70 p-5 dark:border-slate-800 dark:bg-slate-950/30 sm:p-6">
-            <p className="mb-4 text-sm font-semibold text-slate-700 dark:text-slate-200">
-              Puedes continuar desde una de
-              estas secciones
-            </p>
 
-            <div className="grid gap-3 md:grid-cols-3">
-              {shortcuts.map(
-                (shortcut) => {
-                  const Icon =
-                    shortcut.icon;
-
-                  return (
-                    <button
-                      key={shortcut.path}
-                      type="button"
-                      onClick={() =>
-                        navigate(
-                          shortcut.path
-                        )
-                      }
-                      className="group flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 text-left transition-all hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-emerald-700"
-                    >
-                      <span
-                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg ${shortcut.color}`}
-                      >
-                        <Icon
-                          aria-hidden="true"
-                        />
-                      </span>
-
-                      <span className="min-w-0">
-                        <span className="block text-sm font-semibold text-slate-800 transition-colors group-hover:text-emerald-700 dark:text-slate-100 dark:group-hover:text-emerald-400">
-                          {shortcut.label}
-                        </span>
-
-                        <span className="mt-0.5 block truncate text-xs text-slate-500 dark:text-slate-400">
-                          {
-                            shortcut.description
-                          }
-                        </span>
-                      </span>
-                    </button>
-                  );
-                }
-              )}
-            </div>
-          </div>
         </div>
 
         <p className="mt-5 text-center text-xs text-slate-400 dark:text-slate-500">
