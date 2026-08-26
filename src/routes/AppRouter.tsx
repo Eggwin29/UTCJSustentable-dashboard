@@ -2,6 +2,10 @@ import {
   createBrowserRouter,
 } from "react-router-dom";
 
+import {
+  RouteErrorPage,
+} from "@/components/common/ApplicationError";
+
 import MainLayout from "@/layouts/MainLayout";
 
 import AdminRoute from "@/routes/AdminRoute";
@@ -13,28 +17,45 @@ import DesignSystem from "@/pages/DesignSystem/DesignSystem";
 import Login from "@/pages/Login/Login";
 import NotFound from "@/pages/NotFound/NotFound";
 import Participation from "@/pages/Participation/Participation";
+import Profile from "@/pages/Profile/Profile";
 import Reports from "@/pages/Reports/Reports";
 import Settings from "@/pages/Settings/Settings";
 import Users from "@/pages/Users/Users";
-import Profile from "@/pages/Profile/Profile";
+import ForgotPassword from "@/pages/ForgotPassword/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword/ResetPassword";
 
 export const router =
   createBrowserRouter([
     {
       path: "/login",
       element: <Login />,
+      errorElement:
+        <RouteErrorPage />,
+    },
+    
+    {
+      path: "/recuperar-contrasena",
+      element: <ForgotPassword />,
+      errorElement: <RouteErrorPage />,
+    },
+    {
+      path: "/restablecer-contrasena",
+      element: <ResetPassword />,
+      errorElement: <RouteErrorPage />,
     },
 
     {
       element:
         <ProtectedRoute />,
 
+      errorElement:
+        <RouteErrorPage />,
+
       children: [
         {
           path: "/",
           element:
             <MainLayout />,
-            
 
           children: [
             {
@@ -42,39 +63,36 @@ export const router =
               element:
                 <Dashboard />,
             },
-            {
-              path:
-                "collections",
 
+            {
+              path: "collections",
               element:
                 <Collections />,
             },
-            {
-              path:
-                "participation",
 
+            {
+              path: "participation",
               element:
                 <Participation />,
             },
-            {
-              path:
-                "reports",
 
+            {
+              path: "reports",
               element:
                 <Reports />,
             },
+
             {
               path: "perfil",
-              element: <Profile />,
+              element:
+                <Profile />,
             },
-            {
-              path:
-                "design-system",
 
+            {
+              path: "design-system",
               element:
                 <DesignSystem />,
             },
-            
 
             {
               element:
@@ -82,16 +100,13 @@ export const router =
 
               children: [
                 {
-                  path:
-                    "users",
-
+                  path: "users",
                   element:
                     <Users />,
                 },
-                {
-                  path:
-                    "settings",
 
+                {
+                  path: "settings",
                   element:
                     <Settings />,
                 },

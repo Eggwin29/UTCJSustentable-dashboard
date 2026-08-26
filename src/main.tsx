@@ -9,6 +9,10 @@ import {
 import App from "./App.tsx";
 
 import {
+  AppErrorBoundary,
+} from "@/components/common/ApplicationError";
+
+import {
   ThemeProvider,
 } from "@/context/theme/ThemeProvider";
 
@@ -21,8 +25,10 @@ createRoot(
   )!
 ).render(
   <StrictMode>
-    <ThemeProvider>
-      <App />
-    </ThemeProvider>
+    <AppErrorBoundary>
+      <ThemeProvider>
+        <App />
+      </ThemeProvider>
+    </AppErrorBoundary>
   </StrictMode>
 );

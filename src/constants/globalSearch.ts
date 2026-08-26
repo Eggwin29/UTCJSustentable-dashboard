@@ -376,6 +376,23 @@ export const GLOBAL_SEARCH_ITEMS:
       roles: ["admin"],
     },
     {
+      id: "settings",
+      title: "Configuración",
+      description:
+        "Administra los catálogos generales del sistema.",
+      path: "/settings",
+      category: "Administración",
+      keywords: [
+        "configuracion",
+        "ajustes",
+        "catalogos",
+        "materiales",
+        "carreras",
+        "cuatrimestres",
+      ],
+      roles: ["admin"],
+    },
+    {
       id: "settings-materials",
       title:
         "Gestionar materiales",
