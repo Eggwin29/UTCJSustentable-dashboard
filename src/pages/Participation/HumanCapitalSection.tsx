@@ -13,16 +13,21 @@ import {
   FiInfo,
   FiPlus,
   FiRefreshCw,
+  FiSearch,
   FiSun,
   FiUsers,
+  FiX,
 } from "react-icons/fi";
 
 import StatCard from "@/components/charts/StatCard";
 import HumanCapitalForm from "@/components/forms/HumanCapitalForm";
+
 import Badge from "@/components/ui/Badge/Badge";
 import Button from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import Pagination from "@/components/ui/pagination";
+import Dropdown from "@/components/ui/select";
 import Skeleton from "@/components/ui/skeleton/Skeleton";
 import { Table } from "@/components/ui/table";
 
@@ -51,26 +56,25 @@ export default function HumanCapitalSection() {
   const [records, setRecords] =
     useState<HumanCapitalRecord[]>([]);
 
-  const [
-    academicTerms,
-    setAcademicTerms,
-  ] = useState<AcademicTerm[]>([]);
+  const [academicTerms, setAcademicTerms] =
+    useState<AcademicTerm[]>([]);
+
+  const [searchTerm, setSearchTerm] =
+    useState("");
+
+  const [yearFilter, setYearFilter] =
+    useState("all");
 
   const [loading, setLoading] =
     useState(true);
 
-  const [
-    errorMessage,
-    setErrorMessage,
-  ] = useState("");
+  const [errorMessage, setErrorMessage] =
+    useState("");
 
   const [showForm, setShowForm] =
     useState(false);
 
-  const [
-    editingRecord,
-    setEditingRecord,
-  ] =
+  const [editingRecord, setEditingRecord] =
     useState<HumanCapitalRecord | null>(
       null
     );
@@ -229,6 +233,77 @@ export default function HumanCapitalSection() {
       ]
     );
 
+  const yearOptions = useMemo(
+    () => [
+      {
+        value: "all",
+        label: "Todos los años",
+      },
+      ...Array.from(
+        new Set(
+          records.map(
+            (record) => record.year
+          )
+        )
+      )
+        .sort((a, b) => b - a)
+        .map((year) => ({
+          value: String(year),
+          label: String(year),
+        })),
+    ],
+    [records]
+  );
+
+  const filteredRecords = useMemo(
+    () => {
+      const normalizedSearch =
+        normalizeSearchValue(
+          searchTerm.trim()
+        );
+
+      return records.filter(
+        (record) => {
+          const matchesYear =
+            yearFilter === "all" ||
+            record.year ===
+              Number(yearFilter);
+
+          if (!matchesYear) {
+            return false;
+          }
+
+          if (!normalizedSearch) {
+            return true;
+          }
+
+          const searchableValue =
+            normalizeSearchValue(
+              [
+                record.academicTermLabel,
+                record.year,
+                record.term,
+                record.notes ?? "",
+              ].join(" ")
+            );
+
+          return searchableValue.includes(
+            normalizedSearch
+          );
+        }
+      );
+    },
+    [
+      records,
+      searchTerm,
+      yearFilter,
+    ]
+  );
+
+  const filtersAreActive =
+    searchTerm.trim().length > 0 ||
+    yearFilter !== "all";
+
   const totals = useMemo(
     () =>
       records.reduce(
@@ -263,7 +338,7 @@ export default function HumanCapitalSection() {
     setCurrentPage,
     setPageSize,
     resetPage,
-  } = usePagination(records);
+  } = usePagination(filteredRecords);
 
   const handleOpenCreate = () => {
     setEditingRecord(null);
@@ -303,6 +378,12 @@ export default function HumanCapitalSection() {
     handleCloseForm();
   };
 
+  const handleClearFilters = () => {
+    setSearchTerm("");
+    setYearFilter("all");
+    resetPage();
+  };
+
   return (
     <div className="space-y-6">
       <Card
@@ -311,51 +392,19 @@ export default function HumanCapitalSection() {
       >
         <span
           aria-hidden="true"
-          className="
-            absolute inset-y-0
-            left-0 w-1
-            bg-sky-500
-          "
+          className="absolute inset-y-0 left-0 w-1 bg-sky-500"
         />
 
-        <Card.Body
-          className="
-            p-5 pl-6
-            sm:p-6 sm:pl-7
-          "
-        >
-          <div
-            className="
-              flex flex-col gap-5
-              lg:flex-row
-              lg:items-center
-              lg:justify-between
-            "
-          >
+        <Card.Body className="p-5 pl-6 sm:p-6 sm:pl-7">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-start gap-3">
-              <div
-                className="
-                  flex h-11 w-11 shrink-0
-                  items-center justify-center
-                  rounded-xl
-                  bg-sky-100
-                  text-xl text-sky-700
-                  dark:bg-sky-900/40
-                  dark:text-sky-300
-                "
-              >
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-xl text-sky-700 dark:bg-sky-900/40 dark:text-sky-300">
                 <FiUsers aria-hidden="true" />
               </div>
 
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2
-                    className="
-                      text-xl font-bold
-                      text-slate-900
-                      dark:text-white
-                    "
-                  >
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white">
                     Capital humano
                   </h2>
 
@@ -372,13 +421,7 @@ export default function HumanCapitalSection() {
                   </Badge>
                 </div>
 
-                <p
-                  className="
-                    mt-1 text-sm leading-6
-                    text-slate-500
-                    dark:text-slate-400
-                  "
-                >
+                <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">
                   Participación agregada de
                   los turnos T.M. Martes y
                   T.V. Jueves por
@@ -431,44 +474,19 @@ export default function HumanCapitalSection() {
             </div>
           </div>
 
-          <div
-            className="
-              mt-5 flex gap-3
-              rounded-xl border
-              border-sky-200
-              bg-sky-50 p-4
-              dark:border-sky-900/60
-              dark:bg-sky-950/30
-            "
-          >
+          <div className="mt-5 flex gap-3 rounded-xl border border-sky-200 bg-sky-50 p-4 dark:border-sky-900/60 dark:bg-sky-950/30">
             <FiInfo
-              className="
-                mt-0.5 shrink-0
-                text-sky-700
-                dark:text-sky-300
-              "
+              className="mt-0.5 shrink-0 text-sky-700 dark:text-sky-300"
               aria-hidden="true"
             />
 
             <div>
-              <p
-                className="
-                  text-sm font-semibold
-                  text-sky-800
-                  dark:text-sky-300
-                "
-              >
+              <p className="text-sm font-semibold text-sky-800 dark:text-sky-300">
                 Un resultado por
                 cuatrimestre
               </p>
 
-              <p
-                className="
-                  mt-1 text-sm leading-6
-                  text-sky-700
-                  dark:text-sky-400
-                "
-              >
+              <p className="mt-1 text-sm leading-6 text-sky-700 dark:text-sky-400">
                 Los dos turnos se concentran
                 en un mismo registro. Los
                 totales se calculan
@@ -502,13 +520,7 @@ export default function HumanCapitalSection() {
         </div>
       )}
 
-      <section
-        className="
-          grid gap-4
-          sm:grid-cols-2
-          xl:grid-cols-4
-        "
-      >
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label="Cuatrimestres registrados"
           value={records.length}
@@ -567,37 +579,15 @@ export default function HumanCapitalSection() {
       {errorMessage && (
         <Card
           variant="outlined"
-          className="
-            border-red-200
-            dark:border-red-900
-          "
+          className="border-red-200 dark:border-red-900"
         >
-          <Card.Body
-            className="
-              flex flex-col gap-3 p-5
-              sm:flex-row
-              sm:items-center
-              sm:justify-between
-            "
-          >
+          <Card.Body className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p
-                className="
-                  text-sm font-semibold
-                  text-red-700
-                  dark:text-red-400
-                "
-              >
+              <p className="text-sm font-semibold text-red-700 dark:text-red-400">
                 {errorMessage}
               </p>
 
-              <p
-                className="
-                  mt-1 text-sm
-                  text-slate-500
-                  dark:text-slate-400
-                "
-              >
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                 Verifica la conexión con
                 Supabase e inténtalo de
                 nuevo.
@@ -618,15 +608,7 @@ export default function HumanCapitalSection() {
       )}
 
       <Card variant="outlined">
-        <Card.Header
-          className="
-            flex-row items-start
-            justify-between gap-4
-            border-b border-slate-100
-            p-5
-            dark:border-slate-800
-          "
-        >
+        <Card.Header className="flex-row items-start justify-between gap-4 border-b border-slate-100 p-5 dark:border-slate-800">
           <div>
             <Card.Title>
               Historial de Capital humano
@@ -640,21 +622,82 @@ export default function HumanCapitalSection() {
           </div>
 
           <Badge variant="secondary">
-            {formatNumber(records.length)}
+            {filtersAreActive
+              ? `${formatNumber(
+                  filteredRecords.length
+                )} de ${formatNumber(
+                  records.length
+                )}`
+              : formatNumber(
+                  records.length
+                )}
 
-            {records.length === 1
+            {filteredRecords.length === 1
               ? " registro"
               : " registros"}
           </Badge>
         </Card.Header>
 
-        <Table
-          className="
-            rounded-none
-            border-x-0 border-b-0
-            border-t-0
-          "
-        >
+        <Card.Body className="border-b border-slate-100 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-950/25">
+          <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_220px_auto] md:items-end">
+            <Input
+              id="human-capital-search"
+              name="humanCapitalSearch"
+              type="search"
+              label="Buscar"
+              placeholder="Cuatrimestre u observaciones..."
+              value={searchTerm}
+              onChange={(event) => {
+                setSearchTerm(
+                  event.target.value
+                );
+                resetPage();
+              }}
+              leftIcon={
+                <FiSearch
+                  aria-hidden="true"
+                />
+              }
+              clearable
+              autoComplete="off"
+              disabled={loading}
+            />
+
+            <Dropdown
+              id="human-capital-year-filter"
+              label="Año"
+              options={yearOptions}
+              value={yearFilter}
+              onChange={(value) => {
+                setYearFilter(
+                  String(value)
+                );
+                resetPage();
+              }}
+              disabled={loading}
+            />
+
+            {filtersAreActive && (
+              <Button
+                type="button"
+                variant="ghost"
+                leftIcon={
+                  <FiX
+                    aria-hidden="true"
+                  />
+                }
+                onClick={
+                  handleClearFilters
+                }
+                className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/30 dark:hover:text-red-300"
+              >
+                Limpiar filtros
+              </Button>
+            )}
+          </div>
+        </Card.Body>
+
+        <Table className="rounded-none border-x-0 border-b-0 border-t-0">
           <Table.Head>
             <Table.Row>
               <Table.HeaderCell>
@@ -742,14 +785,23 @@ export default function HumanCapitalSection() {
 
             {!loading &&
               !errorMessage &&
-              records.length === 0 && (
+              filteredRecords.length ===
+                0 && (
                 <Table.Empty
                   colSpan={7}
                   icon={
                     <FiUsers size={30} />
                   }
-                  title="No hay participación registrada"
-                  description="Agrega el primer resultado de Capital humano."
+                  title={
+                    filtersAreActive
+                      ? "No hay coincidencias"
+                      : "No hay participación registrada"
+                  }
+                  description={
+                    filtersAreActive
+                      ? "Cambia o limpia los filtros para consultar otros registros."
+                      : "Agrega el primer resultado de Capital humano."
+                  }
                 />
               )}
 
@@ -763,13 +815,7 @@ export default function HumanCapitalSection() {
                   >
                     <Table.Cell>
                       <div className="flex flex-wrap items-center gap-2">
-                        <span
-                          className="
-                            font-medium
-                            text-slate-800
-                            dark:text-white
-                          "
-                        >
+                        <span className="font-medium text-slate-800 dark:text-white">
                           {
                             record.academicTermLabel
                           }
@@ -802,13 +848,7 @@ export default function HumanCapitalSection() {
                     </Table.Cell>
 
                     <Table.Cell align="right">
-                      <span
-                        className="
-                          font-semibold
-                          text-slate-800
-                          dark:text-white
-                        "
-                      >
+                      <span className="font-semibold text-slate-800 dark:text-white">
                         {formatNumber(
                           record.totalParticipants
                         )}
@@ -817,10 +857,7 @@ export default function HumanCapitalSection() {
 
                     <Table.Cell>
                       <span
-                        className="
-                          block max-w-xs
-                          truncate
-                        "
+                        className="block max-w-xs truncate"
                         title={
                           record.notes ??
                           undefined
@@ -868,15 +905,9 @@ export default function HumanCapitalSection() {
         </Table>
 
         {!loading &&
-          !errorMessage && (
-            <Card.Body
-              className="
-                border-t
-                border-slate-100
-                p-4
-                dark:border-slate-800
-              "
-            >
+          !errorMessage &&
+          filteredRecords.length > 0 && (
+            <Card.Body className="border-t border-slate-100 p-4 dark:border-slate-800">
               <Pagination
                 currentPage={currentPage}
                 totalItems={totalItems}
@@ -887,30 +918,31 @@ export default function HumanCapitalSection() {
                 onPageSizeChange={
                   setPageSize
                 }
-                className="
-                  mt-0 border-0
-                  bg-slate-50
-                  shadow-none
-                  dark:bg-slate-950/40
-                "
+                className="mt-0 border-0 bg-slate-50 shadow-none dark:bg-slate-950/40"
               />
             </Card.Body>
           )}
       </Card>
 
-      <p
-        className="
-          text-xs leading-5
-          text-slate-400
-          dark:text-slate-500
-        "
-      >
+      <p className="text-xs leading-5 text-slate-400 dark:text-slate-500">
         Los registros no se eliminan para
         conservar el historial de
         participación del programa.
       </p>
     </div>
   );
+}
+
+function normalizeSearchValue(
+  value: string
+): string {
+  return value
+    .normalize("NFD")
+    .replace(
+      /[\u0300-\u036f]/g,
+      ""
+    )
+    .toLowerCase();
 }
 
 function sortHumanCapitalRecords(

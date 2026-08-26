@@ -13,7 +13,6 @@ import ProtectedRoute from "@/routes/ProtectedRoute";
 
 import Collections from "@/pages/Collections/Collections";
 import Dashboard from "@/pages/Dashboard/Dashboard";
-import DesignSystem from "@/pages/DesignSystem/DesignSystem";
 import Login from "@/pages/Login/Login";
 import NotFound from "@/pages/NotFound/NotFound";
 import Participation from "@/pages/Participation/Participation";
@@ -86,12 +85,6 @@ export const router =
               path: "perfil",
               element:
                 <Profile />,
-            },
-
-            {
-              path: "design-system",
-              element:
-                <DesignSystem />,
             },
 
             {

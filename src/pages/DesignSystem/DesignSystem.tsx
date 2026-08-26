@@ -159,7 +159,7 @@ export default function DesignSystem() {
             </Card.Header>
 
             <Card.Image
-              src="https://i.ebayimg.com/images/g/SNkAAOSw4k1hJxfZ/s-l1200.jpg"
+              src="https://hips.hearstapps.com/hmg-prod/images/bunny-mellon-virginia-home-side-gardens-657382bf3fcae.jpg?crop=0.673xw:1.00xh;0.165xw,0&resize=1200:*"
               alt="Imagen ejemplo"
             />
 

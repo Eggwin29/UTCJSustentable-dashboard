@@ -11,6 +11,7 @@ import {
 import Button from "@/components/ui/button";
 import { useAuth } from "@/context/auth/useAuth";
 import { authService } from "@/services/authService";
+import Spinner from "@/components/ui/spinner/Spinner"
 
 export default function ProtectedRoute() {
   const {
@@ -43,7 +44,10 @@ export default function ProtectedRoute() {
     (user && profileLoading)
   ) {
     return (
-      <FullScreenMessage title="Cargando..." />
+      <FullScreenMessage title="Cargando...">
+        <Spinner color="white" />
+      </FullScreenMessage>
+
     );
   }
 
@@ -106,12 +110,15 @@ interface FullScreenMessageProps {
   title: string;
   description?: string;
   action?: ReactNode;
+  children?: ReactNode;
 }
 
 function FullScreenMessage({
   title,
   description,
   action,
+  children
+  
 }: FullScreenMessageProps) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-100 p-6 dark:bg-slate-950">
@@ -125,6 +132,8 @@ function FullScreenMessage({
             {description}
           </p>
         )}
+
+        {children && <div className="mt-4 flex justify-center">{children}</div>}
 
         {action && (
           <div className="mt-6">

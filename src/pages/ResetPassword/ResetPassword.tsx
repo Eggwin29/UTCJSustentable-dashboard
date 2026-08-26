@@ -64,47 +64,35 @@ export default function ResetPassword() {
   ] = useState(false);
 
   useEffect(() => {
-    let mounted = true;
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (!mounted) {
-          return;
-        }
-
-        if (
-          event === "PASSWORD_RECOVERY" ||
-          session
-        ) {
-          setLinkStatus("valid");
-        }
+  let mounted = true;
+  let recoveryDetected = false;
+  const {
+    data: { subscription },
+  } = supabase.auth.onAuthStateChange(
+    (event) => {
+      if (!mounted) {
+        return;
       }
-    );
 
-    async function verifyRecoverySession() {
-      const {
-        data: { session },
-      } =
-        await supabase.auth.getSession();
-
-      if (mounted) {
-        setLinkStatus(
-          session
-            ? "valid"
-            : "invalid"
-        );
+      if (event === "PASSWORD_RECOVERY") {
+        recoveryDetected = true;
+        setLinkStatus("valid");
       }
     }
+  );
 
-    void verifyRecoverySession();
+  const timeoutId = window.setTimeout(() => {
+    if (mounted && !recoveryDetected) {
+      setLinkStatus("invalid");
+    }
+  }, 3000);
 
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, []);
+  return () => {
+    mounted = false;
+    window.clearTimeout(timeoutId);
+    subscription.unsubscribe();
+  };
+}, []);
 
   const handleSubmit = async (
     event: FormEvent<HTMLFormElement>
@@ -205,7 +193,7 @@ export default function ResetPassword() {
             className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-700 hover:underline dark:text-emerald-400"
           >
             <FiArrowLeft aria-hidden="true" />
-            Solicitar un enlace nuevo
+            Volver
           </Link>
         </div>
       </AuthLayout>
