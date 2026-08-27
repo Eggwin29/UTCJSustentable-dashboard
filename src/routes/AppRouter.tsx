@@ -11,41 +11,64 @@ import MainLayout from "@/layouts/MainLayout";
 import AdminRoute from "@/routes/AdminRoute";
 import ProtectedRoute from "@/routes/ProtectedRoute";
 
-import Collections from "@/pages/Collections/Collections";
-import Dashboard from "@/pages/Dashboard/Dashboard";
-import Login from "@/pages/Login/Login";
-import NotFound from "@/pages/NotFound/NotFound";
-import Participation from "@/pages/Participation/Participation";
-import Profile from "@/pages/Profile/Profile";
-import Reports from "@/pages/Reports/Reports";
-import Settings from "@/pages/Settings/Settings";
-import Users from "@/pages/Users/Users";
-import ForgotPassword from "@/pages/ForgotPassword/ForgotPassword";
-import ResetPassword from "@/pages/ResetPassword/ResetPassword";
-
 export const router =
   createBrowserRouter([
     {
       path: "/login",
-      element: <Login />,
+
+      lazy: async () => {
+        const { default: Component } =
+          await import(
+            "@/pages/Login/Login"
+          );
+
+        return {
+          Component,
+        };
+      },
+
       errorElement:
         <RouteErrorPage />,
     },
-    
+
     {
       path: "/recuperar-contrasena",
-      element: <ForgotPassword />,
-      errorElement: <RouteErrorPage />,
-    },
-    {
-      path: "/restablecer-contrasena",
-      element: <ResetPassword />,
-      errorElement: <RouteErrorPage />,
+
+      lazy: async () => {
+        const { default: Component } =
+          await import(
+            "@/pages/ForgotPassword/ForgotPassword"
+          );
+
+        return {
+          Component,
+        };
+      },
+
+      errorElement:
+        <RouteErrorPage />,
     },
 
     {
-      element:
-        <ProtectedRoute />,
+      path: "/restablecer-contrasena",
+
+      lazy: async () => {
+        const { default: Component } =
+          await import(
+            "@/pages/ResetPassword/ResetPassword"
+          );
+
+        return {
+          Component,
+        };
+      },
+
+      errorElement:
+        <RouteErrorPage />,
+    },
+
+    {
+      element: <ProtectedRoute />,
 
       errorElement:
         <RouteErrorPage />,
@@ -53,63 +76,141 @@ export const router =
       children: [
         {
           path: "/",
-          element:
-            <MainLayout />,
+          element: <MainLayout />,
 
           children: [
             {
               index: true,
-              element:
-                <Dashboard />,
+
+              lazy: async () => {
+                const {
+                  default: Component,
+                } = await import(
+                  "@/pages/Dashboard/Dashboard"
+                );
+
+                return {
+                  Component,
+                };
+              },
             },
 
             {
               path: "collections",
-              element:
-                <Collections />,
+
+              lazy: async () => {
+                const {
+                  default: Component,
+                } = await import(
+                  "@/pages/Collections/Collections"
+                );
+
+                return {
+                  Component,
+                };
+              },
             },
 
             {
               path: "participation",
-              element:
-                <Participation />,
+
+              lazy: async () => {
+                const {
+                  default: Component,
+                } = await import(
+                  "@/pages/Participation/Participation"
+                );
+
+                return {
+                  Component,
+                };
+              },
             },
 
             {
               path: "reports",
-              element:
-                <Reports />,
+
+              lazy: async () => {
+                const {
+                  default: Component,
+                } = await import(
+                  "@/pages/Reports/Reports"
+                );
+
+                return {
+                  Component,
+                };
+              },
             },
 
             {
               path: "perfil",
-              element:
-                <Profile />,
+
+              lazy: async () => {
+                const {
+                  default: Component,
+                } = await import(
+                  "@/pages/Profile/Profile"
+                );
+
+                return {
+                  Component,
+                };
+              },
             },
 
             {
-              element:
-                <AdminRoute />,
+              element: <AdminRoute />,
 
               children: [
                 {
                   path: "users",
-                  element:
-                    <Users />,
+
+                  lazy: async () => {
+                    const {
+                      default: Component,
+                    } = await import(
+                      "@/pages/Users/Users"
+                    );
+
+                    return {
+                      Component,
+                    };
+                  },
                 },
 
                 {
                   path: "settings",
-                  element:
-                    <Settings />,
+
+                  lazy: async () => {
+                    const {
+                      default: Component,
+                    } = await import(
+                      "@/pages/Settings/Settings"
+                    );
+
+                    return {
+                      Component,
+                    };
+                  },
                 },
               ],
             },
 
             {
               path: "*",
-              element:
-                <NotFound />,
+
+              lazy: async () => {
+                const {
+                  default: Component,
+                } = await import(
+                  "@/pages/NotFound/NotFound"
+                );
+
+                return {
+                  Component,
+                };
+              },
             },
           ],
         },

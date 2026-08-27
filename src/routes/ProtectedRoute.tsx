@@ -45,7 +45,7 @@ export default function ProtectedRoute() {
   ) {
     return (
       <FullScreenMessage title="Cargando...">
-        <Spinner color="white" />
+        <Spinner color="primary" />
       </FullScreenMessage>
 
     );
