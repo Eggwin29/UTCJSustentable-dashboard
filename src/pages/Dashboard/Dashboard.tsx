@@ -23,7 +23,6 @@ import {
   useNavigate,
 } from "react-router-dom";
 
-import Logo from "@/components/charts/logo";
 import StatCard from "@/components/charts/StatCard";
 
 import Badge from "@/components/ui/Badge/Badge";
