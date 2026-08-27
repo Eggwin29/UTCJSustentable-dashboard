@@ -101,13 +101,14 @@ export default function Dashboard() {
 
         <div className="relative flex flex-col gap-7 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex min-w-0 items-start gap-4 sm:items-center">
-            <div className="hidden shrink-0 rounded-2xl bg-white/12 p-2 ring-1 ring-white/20 sm:block">
-              <Logo
-                width={76}
-                height={76}
-              />
-            </div>
-
+            {/*<div className="hidden h-[112px] w-[120px] shrink-0 items-center justify-center rounded-2xl bg-white/95 p-2.5 shadow-sm ring-1 ring-white/30 sm:flex">
+                          <Logo
+                            width="100%"
+                            height="100%"
+                          />
+                        </div>
+            */}
+                        
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <Badge

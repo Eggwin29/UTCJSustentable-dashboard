@@ -5,14 +5,12 @@ import type {
 import Logo from "@/components/charts/logo";
 
 interface AuthLayoutProps {
-  eyebrow?: string;
   title: string;
   description: string;
   children: ReactNode;
 }
 
 export default function AuthLayout({
-  eyebrow = "UTCJ Sustentable",
   title,
   description,
   children,
@@ -31,16 +29,12 @@ export default function AuthLayout({
 
       <main className="relative z-10 w-full max-w-md">
         <div className="mb-6 text-center">
-          <div className="mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-2xl border border-emerald-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-            <Logo
-              width={68}
-              height={68}
-            />
-          </div>
-
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-400">
-            {eyebrow}
-          </p>
+          <div className="mx-auto mb-3 flex h-32 w-36 items-center justify-center p-2">
+        <Logo
+          width="100%"
+          height="100%"
+        />
+      </div>
         </div>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-900/5 dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/20 sm:p-8">
@@ -57,7 +51,7 @@ export default function AuthLayout({
           {children}
         </section>
 
-        <p className="mt-5 text-center text-xs text-slate-500">
+        <p className="mt-5 text-center text-xs text-slate-500 dark:text-slate-400">
           Acceso exclusivo para personal autorizado.
         </p>
       </main>

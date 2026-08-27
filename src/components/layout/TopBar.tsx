@@ -95,7 +95,7 @@ export const TopBar:
     return (
       <header className="sticky top-0 z-20 flex h-20 w-full items-center justify-between border-b border-slate-200/80 bg-white px-2 shadow-xs transition-colors duration-200 dark:border-emerald-950/60 dark:bg-slate-950 sm:h-22 sm:px-4 lg:h-25 lg:px-6">
         <div className="flex min-w-0 items-center gap-1 sm:gap-3 lg:gap-4">
-          <div className="flex h-13 w-13 shrink-0 items-center justify-center sm:h-16 sm:w-16 lg:h-[75px] lg:w-[75px]">
+          <div className="flex h-14 w-16 shrink-0 items-center justify-center sm:h-18 sm:w-20 lg:h-[82px] lg:w-[88px]">
             <Logo
               width="100%"
               height="100%"

@@ -412,16 +412,13 @@ export default function GlobalSearch({
       className="relative z-[70]"
     >
       <div className="relative hidden md:block">
-        <FiSearch
-          className="pointer-events-none absolute left-3.5 top-1/2 z-10 h-3.5 w-3.5 -translate-y-1/2 text-slate-400"
-          aria-hidden="true"
-        />
+
 
         <div className="relative flex h-10 w-72 items-center rounded-xl border border-slate-200/80 bg-slate-100/70 shadow-inner shadow-slate-200/30 transition-all duration-200 focus-within:border-emerald-500 focus-within:bg-white focus-within:ring-3 focus-within:ring-emerald-500/10 dark:border-slate-800 dark:bg-slate-900/80 dark:shadow-black/10 dark:focus-within:border-emerald-500/70 dark:focus-within:bg-slate-900 dark:focus-within:ring-emerald-500/10">
-  <FiSearch
-    className="pointer-events-none absolute left-3.5 h-4 w-4 text-slate-400 dark:text-slate-500"
-    aria-hidden="true"
-  />
+        <FiSearch
+          className="pointer-events-none absolute left-3.5 h-4 w-4 text-slate-400 dark:text-slate-500"
+          aria-hidden="true"
+        />
 
         <input
             ref={desktopInputRef}
