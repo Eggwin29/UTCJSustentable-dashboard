@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useRef,
   useState,
   type FormEvent,
 } from "react";
@@ -13,7 +14,6 @@ import {
 } from "react-icons/fi";
 
 import {
-  Link,
   useNavigate,
 } from "react-router-dom";
 
@@ -30,6 +30,10 @@ import {
   authService,
 } from "@/services/authService";
 
+import {
+  passwordRecoveryState,
+} from "@/utils/passwordRecovery";
+
 type LinkStatus =
   | "checking"
   | "valid"
@@ -37,6 +41,9 @@ type LinkStatus =
 
 export default function ResetPassword() {
   const navigate = useNavigate();
+
+  const recoveryDetectedRef =
+    useRef(false);
 
   const [
     linkStatus,
@@ -63,36 +70,77 @@ export default function ResetPassword() {
     setIsSubmitting,
   ] = useState(false);
 
+  const [
+    isLeaving,
+    setIsLeaving,
+  ] = useState(false);
+
   useEffect(() => {
-  let mounted = true;
-  let recoveryDetected = false;
-  const {
-    data: { subscription },
-  } = supabase.auth.onAuthStateChange(
-    (event) => {
+    let mounted = true;
+
+    recoveryDetectedRef.current =
+      passwordRecoveryState.isActive();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(
+      (event, nextSession) => {
+        if (!mounted) {
+          return;
+        }
+
+        if (
+          event ===
+            "PASSWORD_RECOVERY" &&
+          nextSession
+        ) {
+          recoveryDetectedRef.current =
+            true;
+
+          passwordRecoveryState.activate();
+          setLinkStatus("valid");
+        }
+      }
+    );
+
+    async function validateRecovery() {
+      const {
+        data: { session },
+        error,
+      } =
+        await supabase.auth.getSession();
+
       if (!mounted) {
         return;
       }
 
-      if (event === "PASSWORD_RECOVERY") {
-        recoveryDetected = true;
-        setLinkStatus("valid");
-      }
-    }
-  );
+      const recoveryIsActive =
+        recoveryDetectedRef.current ||
+        passwordRecoveryState.isActive();
 
-  const timeoutId = window.setTimeout(() => {
-    if (mounted && !recoveryDetected) {
+      if (
+        !error &&
+        session &&
+        recoveryIsActive
+      ) {
+        setLinkStatus("valid");
+        return;
+      }
+
+      if (!session) {
+        passwordRecoveryState.clear();
+      }
+
       setLinkStatus("invalid");
     }
-  }, 3000);
 
-  return () => {
-    mounted = false;
-    window.clearTimeout(timeoutId);
-    subscription.unsubscribe();
-  };
-}, []);
+    void validateRecovery();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const handleSubmit = async (
     event: FormEvent<HTMLFormElement>
@@ -126,6 +174,7 @@ export default function ResetPassword() {
 
       try {
         await authService.signOut();
+        passwordRecoveryState.clear();
       } catch (signOutError) {
         console.error(
           "La contraseña cambió, pero no se pudo cerrar la sesión:",
@@ -152,6 +201,25 @@ export default function ResetPassword() {
       setIsSubmitting(false);
     }
   };
+
+  const handleReturnToLogin =
+    async () => {
+      setIsLeaving(true);
+
+      try {
+        await authService.signOut();
+        passwordRecoveryState.clear();
+      } catch (error) {
+        console.error(
+          "No se pudo cerrar la sesión de recuperación:",
+          error
+        );
+      } finally {
+        navigate("/login", {
+          replace: true,
+        });
+      }
+    };
 
   if (linkStatus === "checking") {
     return (
@@ -188,13 +256,22 @@ export default function ResetPassword() {
             </p>
           </div>
 
-          <Link
-            to="/recuperar-contrasena"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-700 hover:underline dark:text-emerald-400"
+          <Button
+            type="button"
+            variant="outline"
+            loading={isLeaving}
+            onClick={() =>
+              void handleReturnToLogin()
+            }
+            leftIcon={
+              <FiArrowLeft
+                aria-hidden="true"
+              />
+            }
+            className="w-full"
           >
-            <FiArrowLeft aria-hidden="true" />
-            Volver
-          </Link>
+            Volver al inicio de sesión
+          </Button>
         </div>
       </AuthLayout>
     );

@@ -5,13 +5,29 @@ import {
   type ReactNode,
 } from "react";
 
-import type { Session } from "@supabase/supabase-js";
-import type { Profile } from "@/types/profile";
+import type {
+  Session,
+} from "@supabase/supabase-js";
 
-import { supabase } from "@/lib/supabase";
-import { profileService } from "@/services/profileService";
+import type {
+  Profile,
+} from "@/types/profile";
 
-import { AuthContext } from "./AuthContext";
+import {
+  supabase,
+} from "@/lib/supabase";
+
+import {
+  profileService,
+} from "@/services/profileService";
+
+import {
+  passwordRecoveryState,
+} from "@/utils/passwordRecovery";
+
+import {
+  AuthContext,
+} from "./AuthContext";
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -29,17 +45,27 @@ export function AuthProvider({
   const [loading, setLoading] =
     useState(true);
 
-  const [profileLoading, setProfileLoading] =
-    useState(false);
+  const [
+    profileLoading,
+    setProfileLoading,
+  ] = useState(false);
 
-  const [profileError, setProfileError] =
-    useState<Error | null>(null);
+  const [
+    profileError,
+    setProfileError,
+  ] = useState<Error | null>(null);
 
   const currentUserIdRef =
     useRef<string | null>(null);
 
+  const recoverySessionRef =
+    useRef(false);
+
   useEffect(() => {
     let mounted = true;
+
+    recoverySessionRef.current =
+      passwordRecoveryState.isActive();
 
     function applySession(
       nextSession: Session | null
@@ -52,9 +78,11 @@ export function AuthProvider({
         nextSession?.user.id ?? null;
 
       const userChanged =
-        currentUserIdRef.current !== nextUserId;
+        currentUserIdRef.current !==
+        nextUserId;
 
-      currentUserIdRef.current = nextUserId;
+      currentUserIdRef.current =
+        nextUserId;
 
       setSession(nextSession);
       setLoading(false);
@@ -62,16 +90,34 @@ export function AuthProvider({
       if (userChanged) {
         setProfile(null);
         setProfileError(null);
-        setProfileLoading(Boolean(nextUserId));
+        setProfileLoading(
+          Boolean(nextUserId)
+        );
       }
+    }
+
+    function applyVisibleSession(
+      nextSession: Session | null
+    ) {
+      if (recoverySessionRef.current) {
+        applySession(null);
+        return;
+      }
+
+      applySession(nextSession);
     }
 
     async function loadSession() {
       const {
-        data: { session: initialSession },
-      } = await supabase.auth.getSession();
+        data: {
+          session: initialSession,
+        },
+      } =
+        await supabase.auth.getSession();
 
-      applySession(initialSession);
+      applyVisibleSession(
+        initialSession
+      );
     }
 
     void loadSession();
@@ -79,8 +125,39 @@ export function AuthProvider({
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(
-      (_event, nextSession) => {
-        applySession(nextSession);
+      (event, nextSession) => {
+        if (
+          event ===
+          "PASSWORD_RECOVERY"
+        ) {
+          recoverySessionRef.current =
+            true;
+
+          passwordRecoveryState.activate();
+
+          /*
+           * Supabase necesita internamente esta
+           * sesión para cambiar la contraseña,
+           * pero no debe exponerse al resto de
+           * la aplicación como sesión normal.
+           */
+          applySession(null);
+          return;
+        }
+
+        if (
+          event === "SIGNED_IN" ||
+          event === "SIGNED_OUT"
+        ) {
+          recoverySessionRef.current =
+            false;
+
+          passwordRecoveryState.clear();
+        }
+
+        applyVisibleSession(
+          nextSession
+        );
       }
     );
 
@@ -93,7 +170,8 @@ export function AuthProvider({
   useEffect(() => {
     let cancelled = false;
 
-    const userId = session?.user.id;
+    const userId =
+      session?.user.id;
 
     async function loadProfile() {
       if (!userId) {
@@ -109,9 +187,8 @@ export function AuthProvider({
 
       try {
         const userProfile =
-          await profileService.getByUserId(
-            userId
-          );
+          await profileService
+            .getByUserId(userId);
 
         if (!cancelled) {
           setProfile(userProfile);
@@ -149,7 +226,8 @@ export function AuthProvider({
     <AuthContext.Provider
       value={{
         session,
-        user: session?.user ?? null,
+        user:
+          session?.user ?? null,
         profile,
         loading,
         profileLoading,
