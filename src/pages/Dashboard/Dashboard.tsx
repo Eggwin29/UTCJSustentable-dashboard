@@ -173,21 +173,23 @@ export default function Dashboard() {
           </div>
 
           <div className="flex shrink-0 flex-wrap gap-3">
-            <Button
-              variant="secondary"
-              leftIcon={
-                <FiPlus
-                  aria-hidden="true"
-                />
-              }
-              onClick={() =>
-                navigate(
-                  "/collections"
-                )
-              }
-            >
-              Nueva recolección
-            </Button>
+            {isAdmin && (
+                <Button
+                  variant="secondary"
+                  leftIcon={
+                    <FiPlus
+                      aria-hidden="true"
+                    />
+                  }
+                  onClick={() =>
+                    navigate(
+                      "/collections"
+                    )
+                  }
+                >
+                  Nueva recolección
+                </Button>
+              )}
 
             <button
               type="button"
@@ -478,22 +480,24 @@ export default function Dashboard() {
               </Card.Description>
             </div>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              rightIcon={
-                <FiArrowRight
-                  aria-hidden="true"
-                />
-              }
-              onClick={() =>
-                navigate(
-                  "/collections"
-                )
-              }
-            >
-              Ver todas
-            </Button>
+            {isAdmin && (
+              <Button
+                variant="ghost"
+                size="sm"
+                rightIcon={
+                  <FiArrowRight
+                    aria-hidden="true"
+                  />
+                }
+                onClick={() =>
+                  navigate(
+                    "/collections"
+                  )
+                }
+              >
+                Ver todas
+              </Button>
+            )}
           </Card.Header>
 
           <Card.Body className="p-5">
@@ -570,7 +574,11 @@ export default function Dashboard() {
                       />
                     }
                     title="No hay recolecciones recientes"
-                    description="Registra una nueva recolección para comenzar."
+                    description={
+                      isAdmin
+                        ? "Registra una nueva recolección para comenzar."
+                        : "Aún no hay información de recolecciones para mostrar."
+                    }
                   />
                 ) : (
                   recentCollections.map(
@@ -636,30 +644,33 @@ export default function Dashboard() {
           </Card.Header>
 
           <Card.Body className="space-y-3 p-5">
-            <QuickAction
-              icon={FiPlus}
-              title="Registrar recolección"
-              description="Captura material y kilogramos."
-              accent="emerald"
-              onClick={() =>
-                navigate(
-                  "/collections"
-                )
-              }
-            />
+            {isAdmin && (
+            <>
+              <QuickAction
+                icon={FiPlus}
+                title="Registrar recolección"
+                description="Captura material y kilogramos."
+                accent="emerald"
+                onClick={() =>
+                  navigate(
+                    "/collections"
+                  )
+                }
+              />
 
-            <QuickAction
-              icon={FiUsers}
-              title="Gestionar participación"
-              description="Capital humano y estadías."
-              accent="violet"
-              onClick={() =>
-                navigate(
-                  "/participation"
-                )
-              }
-            />
-
+              <QuickAction
+                icon={FiUsers}
+                title="Gestionar participación"
+                description="Capital humano y estadías."
+                accent="violet"
+                onClick={() =>
+                  navigate(
+                    "/participation"
+                  )
+                }
+              />
+            </>
+          )}
             <QuickAction
               icon={FiBarChart2}
               title="Consultar reportes"

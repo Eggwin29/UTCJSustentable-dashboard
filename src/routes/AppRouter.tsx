@@ -96,38 +96,6 @@ export const router =
             },
 
             {
-              path: "collections",
-
-              lazy: async () => {
-                const {
-                  default: Component,
-                } = await import(
-                  "@/pages/Collections/Collections"
-                );
-
-                return {
-                  Component,
-                };
-              },
-            },
-
-            {
-              path: "participation",
-
-              lazy: async () => {
-                const {
-                  default: Component,
-                } = await import(
-                  "@/pages/Participation/Participation"
-                );
-
-                return {
-                  Component,
-                };
-              },
-            },
-
-            {
               path: "reports",
 
               lazy: async () => {
@@ -163,6 +131,38 @@ export const router =
               element: <AdminRoute />,
 
               children: [
+                {
+                  path: "collections",
+
+                  lazy: async () => {
+                    const {
+                      default: Component,
+                    } = await import(
+                      "@/pages/Collections/Collections"
+                    );
+
+                    return {
+                      Component,
+                    };
+                  },
+                },
+
+                {
+                  path: "participation",
+
+                  lazy: async () => {
+                    const {
+                      default: Component,
+                    } = await import(
+                      "@/pages/Participation/Participation"
+                    );
+
+                    return {
+                      Component,
+                    };
+                  },
+                },
+
                 {
                   path: "users",
 

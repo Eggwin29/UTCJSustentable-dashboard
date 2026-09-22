@@ -48,6 +48,7 @@ export const GLOBAL_SEARCH_ITEMS:
         "kilogramos",
         "materiales",
       ],
+      roles: ["admin"],
     },
     {
       id: "participation-human-capital",
@@ -63,6 +64,7 @@ export const GLOBAL_SEARCH_ITEMS:
         "tv jueves",
         "asistencia",
       ],
+      roles: ["admin"],
     },
     {
       id: "participation-internships",
@@ -79,6 +81,7 @@ export const GLOBAL_SEARCH_ITEMS:
         "carreras",
         "participantes",
       ],
+      roles: ["admin"],
     },
     {
       id: "reports",

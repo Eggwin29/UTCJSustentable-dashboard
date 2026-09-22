@@ -76,9 +76,21 @@ export const Sidebar:
               Sistema activo
             </p>
 
-            <p className="mt-0.5 text-[10px] text-slate-500">
-              v1.0.0
-            </p>
+            <p className="mt-1 flex items-center justify-center gap-1.5 text-[9px] text-slate-500">
+            <span>v1.0.0</span>
+
+            <span aria-hidden="true">
+              •
+            </span>
+
+            <span
+              className="cursor-help transition-colors hover:text-slate-300"
+              title="Desarrollado por Edwin Martínez Mendoza"
+              aria-label="Desarrollado por Edwin Martínez Mendoza"
+            >
+              por Edwin Martínez
+            </span>
+          </p>
           </div>
         </aside>
       </>

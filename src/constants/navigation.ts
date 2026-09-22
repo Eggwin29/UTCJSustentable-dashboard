@@ -33,13 +33,13 @@ export const navigation:
     {
       name: "Colecciones",
       path: "/collections",
-      type: "main",
+      type: "admin",
       icon: FiLayers,
     },
     {
       name: "Participación",
       path: "/participation",
-      type: "main",
+      type: "admin",
       icon: FiUserCheck,
     },
     {
